@@ -4,6 +4,6 @@ p92/
 duplex/
 
 processing/output/*
-figures/
+figures/*.pdf
 summary.txt
 capture.txt

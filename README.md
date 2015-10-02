@@ -9,4 +9,12 @@ The following sample sets are considered:
 
 The ``process/`` folder contains instructions for data pre-processing.
 
-The ``analyze.sh`` can be used to reproduce figures reported in present paper.
+To reproduce figures reported in present paper run:
+
+```bash
+groovy GenerateTable.groovy
+Rscript main_text.R
+Rscript suppl.R
+```
+
+Requires [R](https://www.r-project.org/) and [Groovy](http://www.groovy-lang.org/) to be installed for running.
