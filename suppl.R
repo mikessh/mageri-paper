@@ -9,7 +9,7 @@ df <- subset(df, processing == "mageri" & type == "error")
 
 ### Figure S2
 
-pdf("out/fig.s1a.pdf")
+pdf("figures/fig.s1a.pdf")
 ggplot(df, aes(x=cqs)) + geom_histogram(binwidth=1, fill = "#2b8cbe") +
   scale_x_continuous(limits=c(2,40),expand=c(0,0)) + xlab("Consensus quality score") +
   scale_y_continuous(limits=c(0,1000),expand=c(0,0)) + ylab("") +
@@ -23,7 +23,7 @@ df.2 <- data.frame(x=rpois(100000, 1e-5*100000))
 df.2$variable <- rep("expected", nrow(df.2))
 df.1 <- rbind(df.1, df.2)
 
-pdf("out/fig.s1b.pdf")
+pdf("figures/fig.s1b.pdf")
 ggplot(df.1, aes(x=x,fill=variable)) + 
   geom_histogram(aes(y = ..density..)) +   
   scale_x_log10(limits=c(1,1000), expand=c(0,0)) + 
@@ -45,7 +45,7 @@ percent <- function(x, digits = 2, format = "f", ...) {
   paste0(formatC(100 * x, format = format, digits = digits, ...), "%")
 }
 
-pdf("out/fig.s1c.pdf")
+pdf("figures/fig.s1c.pdf", useDingbats=F)
 ggplot(df.3) + 
   geom_point(aes(x=1, y=1, size=sum/sum(sum), fill = subst),colour="black", pch=21) + 
   geom_text(aes(label = percent(sum/sum(sum)), x=1, y=1), vjust=-3) + 
@@ -59,7 +59,7 @@ ggplot(df.3) +
         panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 dev.off()
 
-pdf("out/fig.s1e.pdf")
+pdf("figures/fig.s1e.pdf")
 ggplot(df, aes(x=errrate.est, y=freq)) + geom_abline(intercept = 0, slope = 1,linetype="dashed") +
   stat_density2d(aes(alpha=..level.., fill=..level..), size=3, bins=10, geom="polygon") + 
   scale_fill_gradient(low="gray25", high="red") +
@@ -82,7 +82,7 @@ df.s1 <- ddply(df.s, .(name), summarize,
               expected = mean(known.freq),
               quality = mean(qual))
 
-pdf("out/fig.s3a.pdf")
+pdf("figures/fig.s3a.pdf", useDingbats=F)
 ggplot(df.s1, aes(x=expected, y=observed)) + 
   geom_smooth(color="black",method="lm", fullrange=T, linetype="dashed") +
   geom_point(aes(color=quality, size=log10(quality)),alpha=0.6) +
@@ -97,7 +97,7 @@ dev.off()
 df.s$replica <- paste("sample", df.s$replica, sep="")
 df.s2 <- cast(df.s, name~replica, value="freq")
 
-pdf("out/fig.s3b.pdf")
+pdf("figures/fig.s3b.pdf", useDingbats=F)
 ggplot(df.s2, aes(x=sample1, y=sample2)) + 
   geom_smooth(color="black",method="lm", fullrange=T, linetype="dashed") +
   geom_point(size=10,color="orange",alpha=0.6) +
