@@ -2,4 +2,8 @@ p126/
 p127
 p92/
 duplex/
+
+processing/output/*
 figures/
+summary.txt
+capture.txt
