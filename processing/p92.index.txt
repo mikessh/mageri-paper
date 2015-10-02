@@ -1,0 +1,5 @@
+#index	fastq1	fastq2
+c41.13_plasma	c41.13_plasma_R1.fastq	c41.13_plasma_R2.fastq
+c41.13_tumor	c41.13_tumor_R1.fastq	c41.13_tumor_R2.fastq
+c41.21_plasma	c41.21_plasma_R1.fastq	c41.21_plasma_R2.fastq
+c41.21_tumor	c41.21_tumor_R1.fastq	c41.21_tumor_R2.fastq

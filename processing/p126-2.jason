@@ -1,0 +1,16 @@
+{
+  "project": "p126-2",
+  "references": "meta/refs.fa",
+  "contigs": "meta/contigs.txt",
+  "bed": "meta/refs.bed",
+  "structure": [
+    {
+      "tabular": {
+        "file": "p126-2.index.txt",
+        "primer": {
+    	    "file": "meta/primers.txt"
+        }
+      }
+    }
+  ]
+}
