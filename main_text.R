@@ -6,7 +6,7 @@ df$freq<- as.numeric(as.character(df$freq))
 
 ### Figure 2
 
-pdf("out/fig.2b.pdf")
+pdf("figures/fig.2b.pdf")
 df.1 <- subset(df, processing == "mageri")
 rocobj1 <- plot.roc(df.1$type, df.1$qual,  percent=T, col="#fc8d62", ci=T)
 rocobj2 <- lines.roc(df.1$type, df.1$freq, percent=T, col="#8da0cb", ci=T)
@@ -30,7 +30,7 @@ rocobj2
 rocobj3
 
 #
-df.v <- read.table("h4_hd734_variants.vcf", header = T, comment="##", sep = "\t")
+df.v <- read.table("h4_hd734_variants.vcf", header = T, comment="", skip=28, sep = "\t")
 df <- read.table("capture.txt", header = T, sep = "\t")
 # rare variants
 df.v <- subset(df.v, INFO < 0.005)
@@ -45,7 +45,7 @@ df.1 <- ddply(df, .(size), summarize,
               exp.rate = mean(exp.freq),
               exp.ci = 1.96 *
                 sqrt(sd(exp.freq)^2*((length(exp.freq)-1)/length(exp.freq))) / # recalc to pop sd
-                sqrt(length(exp.freq)
+                sqrt(length(exp.freq))
               )
 
 df.2 <- data.frame(size=c(as.character(df.1$size), as.character(df.1$size)),
@@ -58,7 +58,7 @@ df.2$size <- factor(df.2$size, levels = c("0.1mln", "1mln", "10mln", "full"))
 
 col <- c("#ff7f00", "#1f78b4")
 
-pdf("out/fig2a.pdf")
+pdf("figures/fig2a.pdf")
 ggplot(df.2, aes(x=as.numeric(size), fill=type)) +
   
   geom_ribbon(aes(ymin=value-ci, ymax=value+ci), alpha=0.2) +  

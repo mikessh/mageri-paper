@@ -1,5 +1,3 @@
-package com.milaboratory.mageri.misc
-
 def variantMap = new HashMap<String, List<String>>()
 
 def signatureHeader = "\tchr\tpos\tfrom\tto"
