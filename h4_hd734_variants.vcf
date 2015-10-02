@@ -1,0 +1,56 @@
+##fileformat=VCFv4.0
+##fileDate=Sun May 31 19:23:15 GMT+03:00 2015
+##source=COSMIC
+##reference=GRCh37
+##contig=<ID=1,assembly=hg19,length=249250621>
+##contig=<ID=2,assembly=hg19,length=243199373>
+##contig=<ID=3,assembly=hg19,length=198022430>
+##contig=<ID=4,assembly=hg19,length=191154276>
+##contig=<ID=5,assembly=hg19,length=180915260>
+##contig=<ID=6,assembly=hg19,length=171115067>
+##contig=<ID=7,assembly=hg19,length=159138663>
+##contig=<ID=8,assembly=hg19,length=146364022>
+##contig=<ID=9,assembly=hg19,length=141213431>
+##contig=<ID=10,assembly=hg19,length=135534747>
+##contig=<ID=11,assembly=hg19,length=135006516>
+##contig=<ID=12,assembly=hg19,length=133851895>
+##contig=<ID=13,assembly=hg19,length=115169878>
+##contig=<ID=14,assembly=hg19,length=107349540>
+##contig=<ID=15,assembly=hg19,length=102531392>
+##contig=<ID=16,assembly=hg19,length=90354753>
+##contig=<ID=17,assembly=hg19,length=81195210>
+##contig=<ID=18,assembly=hg19,length=78077248>
+##contig=<ID=19,assembly=hg19,length=59128983>
+##contig=<ID=20,assembly=hg19,length=63025520>
+##contig=<ID=21,assembly=hg19,length=48129895>
+##contig=<ID=22,assembly=hg19,length=51304566>
+##contig=<ID=X,assembly=hg19,length=155270560>
+##contig=<ID=Y,assembly=hg19,length=59373566>
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+chr1	115256528	CONTROL_NRAS_Q61H	T	A	.	.	0.0013
+chr1	115256529	CONTROL_NRAS_Q61L	T	A	.	.	0.0013
+chr1	115256529	CONTROL_NRAS_Q61R	T	C	.	.	0.0013
+chr1	115256530	CONTROL_NRAS_Q61K	G	T	.	.	0.0013
+chr12	25378562	CONTROL_KRAS_A146T	C	T	.	.	0.0013
+chr12	25380275	CONTROL_KRAS_Q61H	T	G	.	.	0.0013
+chr12	25380276	CONTROL_KRAS_Q61L	T	A	.	.	0.0013
+chr12	25398281	CONTROL_KRAS_G13D	C	T	.	.	0.025
+chr12	25398284	CONTROL_KRAS_G12A	C	G	.	.	0.0013
+chr12	25398284	CONTROL_KRAS_G12D	C	T	.	.	0.0013
+chr12	25398284	CONTROL_KRAS_G12V	C	A	.	.	0.0013
+chr12	25398285	CONTROL_KRAS_G12C	C	A	.	.	0.0013
+chr12	25398285	CONTROL_KRAS_G12R	C	G	.	.	0.0013
+chr12	25398285	CONTROL_KRAS_G12S	C	T	.	.	0.0013
+chr19	3118942	CONTROL_GNA11_Q209L	A	T	.	.	0.0013
+chr2	209113112	CONTROL_IDH1_R132C	C	T	.	.	0.0013
+chr2	209113113	CONTROL_IDH1_R132H	G	A	.	.	0.0013
+chr3	178936082	CONTROL_PIK3CA_E542K	G	A	.	.	0.0013
+chr3	178936091	CONTROL_PIK3CA_E545K	G	A	.	.	0.0013
+chr3	178952085	CONTROL_PIK3CA_H1047R	A	G	.	.	0.03
+chr7	55241707	CONTROL_EGFR_G719S	G	A	.	.	0.0167
+chr7	55249071	CONTROL_EGFR_T790M	C	T	.	.	0.0013
+chr7	55259515	CONTROL_EGFR_L858R	T	G	.	.	0.001
+chr7	55259524	CONTROL_EGFR_L861Q	T	A	.	.	0.0013
+chr7	140453136	CONTROL_BRAF_V600E	A	T	.	.	0.008
+chr7	140453136	CONTROL_BRAF_V600G	A	C	.	.	0.001
+chr7	140453137	CONTROL_BRAF_V600M	C	T	.	.	0.0013
