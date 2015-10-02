@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <Session genome="hg38" hasGeneTrack="true" hasSequenceTrack="true" locus="chr9:130872111-130872228" version="8">
     <Resources>
-        <Resource path="/Users/mikesh/Work/RSMU/Oncomigec/new/duplex/duplex.SRR1799908.bam"/>
-        <Resource path="/Users/mikesh/Work/RSMU/Oncomigec/new/duplex/duplex.SRR1799908.vcf"/>
+        <Resource path="../duplex/duplex.SRR1799908.bam"/>
+        <Resource path="../duplex/duplex.SRR1799908.vcf"/>
     </Resources>
     <Panel height="265" name="DataPanel" width="1423">
         <Track SQUISHED_ROW_HEIGHT="4" altColor="0,0,178" autoScale="false" clazz="org.broad.igv.track.FeatureTrack" color="0,0,178" colorMode="GENOTYPE" displayMode="EXPANDED" featureVisibilityWindow="-1" fontSize="10" id="/Users/mikesh/Work/RSMU/Oncomigec/new/duplex/duplex.SRR1799908.vcf" name="duplex.SRR1799908.vcf" renderer="BASIC_FEATURE" sortable="false" visible="true" windowFunction="count"/>
