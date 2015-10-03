@@ -7,6 +7,8 @@ df.s$name <- gsub("CONTROL_", "", df.s$name)
 df.s$name <- gsub("_", ":", df.s$name)
 df <- subset(df, processing == "mageri" & type == "error")
 
+# todo: mig size distribution plot
+
 ### Figure S2
 
 pdf("figures/fig.s1a.pdf")

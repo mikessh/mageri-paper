@@ -1,4 +1,4 @@
-library(pROC); library(scales); library(iNEXT); library(plyr); library(scales)
+library(pROC); library(ggplot2); library(plyr); library(scales)
 
 df <- read.table("summary.txt", header=T, sep ="\t")
 df$qual <- as.numeric(as.character(df$qual))
@@ -69,7 +69,7 @@ ggplot(df.2, aes(x=as.numeric(size), fill=type)) +
   
   #  geom_point(aes(y=value, color=dummy, fill=dummy), size=5, shape=21)  +  
   
-  geom_hline(y=0.348, linetype="dashed") +
+  geom_hline(y=0.348, linetype="dashed") + # todo: calc
   
   annotate("text", label = "raw data, conventional processing", x=2.5, y=0.37) +
   

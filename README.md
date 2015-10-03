@@ -17,4 +17,4 @@ Rscript main_text.R
 Rscript suppl.R
 ```
 
-Requires [R](https://www.r-project.org/) and [Groovy](http://www.groovy-lang.org/) to be installed for running.
+Requires both [R](https://www.r-project.org/) and [Groovy](http://www.groovy-lang.org/) to be installed for running.
