@@ -33,10 +33,9 @@
 ##INFO=<ID=CQ,Number=1,Type=Integer,Description="Assembly quality">
 ##INFO=<ID=ER,Number=.,Type=Float,Description="Error rate">
 ##INFO=<ID=RI,Number=1,Type=String,Description="Reference id">
-##FILTER=<ID=350,Description="Quality below 35">
+##FILTER=<ID=q20,Description="Quality below 20">
 ##FILTER=<ID=si10000,Description="Singleton, frequency below 10000">
 ##FILTER=<ID=c100,Description="Coverage below 100">
-##FILTER=<ID=SNP,Description="High-frequency SNP">
 ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
 ##INFO=<ID=DP,Number=1,Type=Integer,Description="MIG Depth">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	duplex.SRR1799908
