@@ -1,0 +1,6 @@
+#pipeline_block
+sample.group	sample.name	master.found	slave.found	master.first	mig.size.threshold
+h4_ballast_m3	h4_ballast_m3	11252269	10529325	0.4947547912336614	16
+h4_ballast_m2	h4_ballast_m2	19019452	18080470	0.6539041187937487	16
+h4_ballast_m1	h4_ballast_m1	15243708	13751589	0.5954427885918571	16
+h4_ballast_m4	h4_ballast_m4	23139630	21492543	0.7490180266495186	32

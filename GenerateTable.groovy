@@ -64,7 +64,7 @@ new File("summary.txt").withPrintWriter { pw ->
                      * mageri	2	error	.	chr19	4101062	G	T	0.5008889	2250	9999
                      */
                     def vals = stats.split("\t")[0..1].collect { it.toDouble() }
-                    if (vals[0] <= 0.05 && vals[1] > 100) { // freq and depth filters
+                    if (vals[0] <= 0.4 && vals[1] >= 100) { // freq and depth filters
                         pw.println(sample + "\t" + replica + "\terror\t.\t" +
                                 getSignature(splitLine) + "\t" + stats + "\tNA")
                     }

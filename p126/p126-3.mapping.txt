@@ -1,0 +1,6 @@
+#pipeline_block
+sample.group	sample	migs.good.alignment	migs.aligned	migs.chimeric	migs.skipped	migs.total
+h4_ballast_m4	h4_ballast_m4	26939	26942	1	10	28116
+h4_ballast_m3	h4_ballast_m3	48869	48869	0	21	48890
+h4_ballast_m2	h4_ballast_m2	38683	38684	0	33	38720
+h4_ballast_m1	h4_ballast_m1	49365	49766	0	57	49824
