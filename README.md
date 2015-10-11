@@ -1,10 +1,12 @@
 ## IMPORTANT
 
-Datasets present and referenced in this repository, unless otherwise stated, is yet to be published. In consistence with with the 
+Datasets present and referenced in this repository, unless otherwise stated, are yet to be published. In accordance with the 
 principles stated in the [Toronto Genomic Data Use Agreement](http://www.ncbi.nlm.nih.gov/pmc/articles/PMC3073843/), 
 Shugay et al. request that they have the first publication with datasets described here.
 
 ---
+
+## Supplementary data for MAGERI software
 
 This repository contains scripts that can be used to reproduce analysis reported in paper describing [MAGERI](https://github.com/mikessh/mageri) software.
 Raw sequencing datasets can be downloaded from SRA, accession [PRJNA297719](http://www.ncbi.nlm.nih.gov/bioproject/PRJNA297719)
