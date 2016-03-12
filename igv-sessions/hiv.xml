@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Session genome="/Users/mikesh/Work/RSMU/Oncomigec/hiv/meta/hxb2.fa" hasGeneTrack="false" hasSequenceTrack="true" locus="hxb2:2237-2687" path="/Users/mikesh/Programming/mageri-paper/igv-sessions/hiv.xml" version="8">
+    <Resources>
+        <Resource path="/Users/mikesh/Work/RSMU/Oncomigec/hiv/hiv.SRR1763767.vcf"/>
+        <Resource path="/Users/mikesh/Work/RSMU/Oncomigec/hiv/hiv.SRR1763769.vcf"/>
+    </Resources>
+    <Panel height="800" name="DataPanel" width="1903">
+        <Track SQUISHED_ROW_HEIGHT="4" altColor="0,0,178" autoScale="false" clazz="org.broad.igv.track.FeatureTrack" color="0,0,178" colorMode="GENOTYPE" displayMode="EXPANDED" featureVisibilityWindow="-1" fontSize="10" id="/Users/mikesh/Work/RSMU/Oncomigec/hiv/hiv.SRR1763767.vcf" name="hiv.SRR1763767.vcf" renderer="BASIC_FEATURE" sortable="false" visible="true" windowFunction="count"/>
+        <Track SQUISHED_ROW_HEIGHT="4" altColor="0,0,178" autoScale="false" clazz="org.broad.igv.track.FeatureTrack" color="0,0,178" colorMode="GENOTYPE" displayMode="EXPANDED" featureVisibilityWindow="-1" fontSize="10" id="/Users/mikesh/Work/RSMU/Oncomigec/hiv/hiv.SRR1763769.vcf" name="hiv.SRR1763769.vcf" renderer="BASIC_FEATURE" sortable="false" visible="true" windowFunction="count"/>
+    </Panel>
+    <Panel height="34" name="FeaturePanel" width="1903">
+        <Track altColor="0,0,178" autoScale="false" color="0,0,178" displayMode="EXPANDED" featureVisibilityWindow="-1" fontSize="10" id="Reference sequence" name="Reference sequence" sortable="false" visible="true"/>
+    </Panel>
+    <PanelLayout dividerFractions="0.9536266349583828"/>
+    <HiddenAttributes>
+        <Attribute name="DATA FILE"/>
+        <Attribute name="DATA TYPE"/>
+        <Attribute name="NAME"/>
+    </HiddenAttributes>
+</Session>
