@@ -19,7 +19,7 @@ The following sample sets were used in the original manuscript:
 * ``duplex`` - data from duplex sequencing protocol as reported by Schmitt MW *et al.* Nat Met 2015, available in [SRA](http://trace.ddbj.nig.ac.jp/DRASearch/run?acc=SRR1799908)
 * ``hiv`` - data from UMI-tagged HIV sequencing as reported by Zhou S *et al.* J Virol 2015, available in [SRA](http://trace.ddbj.nig.ac.jp/DRASearch/experiment?acc=SRX844885)
 
-The ``process/`` folder contains instructions for data pre-processing.
+The ``process/`` folder contains instructions for data download and pre-processing. Other folders in the repository root contain MAGERI results for analyzed datasets.
 
 To reproduce figures reported in present paper run:
 
