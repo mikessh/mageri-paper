@@ -16,7 +16,7 @@
     <trimAdapters>true</trimAdapters>
     <minUmiMismatchRatio>20.0</minUmiMismatchRatio>
     <forceOverseq>true</forceOverseq>
-    <defaultOverseq>64</defaultOverseq>
+    <defaultOverseq>32</defaultOverseq>
   </PreprocessorParameters>
   <AssemblerParameters>
     <offsetRange>4</offsetRange>
