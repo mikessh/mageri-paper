@@ -10,7 +10,7 @@ new File(outputBed).withPrintWriter { pwBed ->
 	new File(input).eachLine { line ->
 		if (line.startsWith(">")) {
 			def splitLine = line[1..-1].split("\\|")
-			badChrom = splitLine[2].length() > 5
+			badChrom = splitLine[2].length() > 2
 			def signature = splitLine[2..4].join("_")
 			existing = signatureSet.contains(signature)
 
@@ -22,7 +22,7 @@ new File(outputBed).withPrintWriter { pwBed ->
 				pwFa.println(">" + faName)
 				
 				pwBed.println([
-					(splitLine[2].startsWith("chr") ? "" : "chr") + splitLine[2],
+					"chr" + splitLine[2],
 					splitLine[3].toInteger() - flank - 1,
 					splitLine[4].toInteger() + flank,
 					faName,
