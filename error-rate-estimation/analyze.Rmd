@@ -1,0 +1,119 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load data
+
+```{r}
+df <- data.frame()
+
+for (q in c(20,25,30)){
+for (proj in c(73, 82)) {
+  for (sample in c("encyclo", "kappa-hf-taq", "phusion", "sd-hs", "snp-detect",
+                   "taq-hs", "tersus", "tersus-snp-buff", "truseq", "velox")) {
+    
+    .df <- read.table(
+        paste(
+          paste(q, "-1", paste("polerr", proj, sep=""), sep="_"),
+          paste("polerr", proj, ".", sample, ".variant.caller.txt", sep=""), sep ="/"), 
+                               header=T, sep="\t", stringsAsFactors = F)
+    .df$q <- q
+    .df$proj <- proj
+    .df$sample <- sample
+    df <- rbind(df, .df)
+  }
+}
+}
+
+df <- subset(df, freq > 0 & freq < 0.001 & !grepl("D", mutation) & !grepl("I", mutation) & global.est == 0 & 
+               coverage > 0)
+
+df$mut.split <- sapply(df$mutation, function(x) strsplit(as.character(x),"[S:>]"))
+df$mutation.pos <- as.integer(sapply(df$mut.split, function(x) x[2]))
+df$mutation.from <- sapply(df$mut.split, function(x) x[3])
+df$mutation.to <- sapply(df$mut.split, function(x) x[4])
+df$mut.split  <- NULL
+```
+
+Model estimates:
+
+```{r}
+library(ggplot2)
+
+library(RColorBrewer)
+rf <- colorRampPalette(rev(brewer.pal(11,'Spectral')))
+r <- rf(32)
+
+ggplot(df, aes(x=freq, y=error.rate)) + 
+  stat_binhex() +
+  geom_abline(intercept = 0, slope=1, linetype="dashed") + 
+  scale_x_log10(limits=c(1e-6, 1e-2)) + 
+  scale_y_log10(limits=c(1e-6, 1e-2)) + 
+  facet_wrap(~q) +
+  scale_fill_gradientn(colors=r,trans="log") +
+  theme_bw()
+
+for (qq in c(20, 25, 30)) {
+  print(with(subset(df, q == qq), cor(freq, error.rate, method = "spearman")))
+}
+```
+
+Conjugate prior for our model:
+
+```{r}
+library(reshape2)
+library(plyr)
+
+df.1 <- subset(df, q = 20)
+
+df.1$error.rate.bin <- round(df.1$coverage * df.1$error.rate) #round(log10(df.1$error.rate), digits = 1)
+df.1$freq.bin <- round(df.1$coverage * df.1$freq) #round(log10(df.1$freq), digits = 1)
+df.1 <- subset(df.1, freq.bin <= 50 & error.rate.bin <= 50)
+
+df.1 <- ddply(df.1, .(error.rate.bin), transform, f.mean = mean(freq * coverage))
+df.1 <- ddply(df.1, .(error.rate.bin), transform, f.var = var(freq * coverage))
+
+df.1.s <- ddply(df.1, .(error.rate.bin, freq.bin), summarize, 
+                count = length(error.rate.bin), f.mean = f.mean[1], f.var = f.var[1])
+df.1.m <- ddply(df.1.s, .(error.rate.bin), transform, p = count / sum(count))
+
+ggplot(df.1.m, aes(x=freq.bin, y=error.rate.bin, weight=p)) +
+  geom_hex(bins = 20) +
+  scale_fill_gradientn(colors=r, trans="log") +
+  theme_bw()
+
+# Fit distribution parameters
+
+df.1.m.0 <- ddply(df.1.m, .(error.rate.bin, f.mean, f.var), summarize, count = sum(count))
+
+ggplot(df.1.m.0, aes(x=error.rate.bin, y=f.mean)) + geom_point(aes(size=count), shape=21) +
+  geom_smooth(aes(weight=count), method=lm, color="black", linetype="dashed") + 
+  theme_bw()
+
+l.mean.fit <- lm(f.mean ~ error.rate.bin, df.1.m.0, weights=count)
+
+ggplot(df.1.m.0, aes(x=error.rate.bin, y=f.var)) + geom_point(aes(size=count), shape=21) +
+  geom_smooth(aes(weight=count), method=lm, color="black", linetype="dashed") + theme_bw()
+
+l.var.fit <- lm(f.var ~ error.rate.bin, df.1.m.0, weights=count)
+
+# Plot fitted values, Gamma distribution
+
+df.1.m <- ddply(df.1.m, .(error.rate.bin), transform, 
+              f.mean.est = coef(l.mean.fit)[1] + coef(l.mean.fit)[2] * error.rate.bin,
+              f.var.est = coef(l.var.fit)[1] + coef(l.var.fit)[2] * error.rate.bin)
+
+df.1.m$a <- df.1.m$f.mean.est * df.1.m$f.mean.est / df.1.m$f.var.est
+df.1.m$b <- df.1.m$f.mean.est / df.1.m$f.var.est
+df.1.m$prob.gamma <- dgamma(df.1.m$freq.bin, rate = df.1.m$b, shape = df.1.m$a)
+
+ggplot(df.1.m, aes(x=error.rate.bin, group = error.rate.bin)) +
+  geom_boxplot(aes(y=freq.bin, weight=p), fill=NA) +
+  geom_boxplot(aes(y=freq.bin, weight=prob.gamma), color="red", fill=NA) +
+  theme_bw()
+```
