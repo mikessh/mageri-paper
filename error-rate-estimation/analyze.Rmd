@@ -125,7 +125,7 @@ l.var.fit <- lm(f.var ~ count.est,
 
 Compute probabilities based on Gamma distribution, compare fitted and observed ``P(lambda|error rate estimate * coverage)``:
 
-```{r, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE, cache=FALSE}
 df.1.m <- ddply(df.1.m, .(count.est),
                 transform, 
               f.mean.est =
