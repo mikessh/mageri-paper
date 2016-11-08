@@ -67,7 +67,7 @@ for (qq in c(20, 25, 30)) {
 }
 ```
 
-We'll use Bayesian model when computing P-values (and Q-scores) of erroneous variants based on estimated error rate and their count, accounting for a high degree of uncertainity in error rate estimates. Thus, we'll compute P-values based on Negative Binomial distribution instead of Poisson model. To estimate its parameters, lets fit Gamma distribution (conjugate prior of Poisson distribution) to ``P(lambda|error rate estimate * coverage)``. First lets plot the conditional probability: 
+We'll go Bayesian way to compute P-values (and Q-scores) of erroneous variants accounting for the indirect minor-based error model (MBEM) we apply to infer the error rate at a given position. We'll assume that observed erroneous variant counts are distributed according to Poisson distribution with ``lambda`` parameter that is estimated as ``MBEM error rate * coverage``, modelling the uncertainity in ``lambda`` using Gamma distribution. Thus, we'll arrive to a Negative Binomial distribution for our final P-values estimates. First lets plot the conditional probability ``P(lambda|MBEM error rate * coverage)``: 
 
 ```{r}
 library(plyr)
@@ -79,8 +79,8 @@ df.1$count.obs <- round(df.1$coverage * df.1$freq)
 df.1 <- subset(df.1, count.est <= 50 & count.obs <= 50)
 
 # Compute mean and variance for lambda, we'll need it later
-df.1 <- ddply(df.1, .(count.est), transform, f.mean = mean(freq * coverage))
-df.1 <- ddply(df.1, .(count.est), transform, f.var = var(freq * coverage))
+df.1 <- ddply(df.1, .(count.est), transform, f.mean = mean(count))
+df.1 <- ddply(df.1, .(count.est), transform, f.var = var(count))
 
 df.1.s <- ddply(df.1, .(count.est, count.obs),
                 summarize, 
@@ -97,7 +97,7 @@ ggplot(df.1.m, aes(x=count.est, y=count.obs, weight=weight.norm)) +
   theme_bw()
 ```
 
-Gamma distribution parameters ``alpha`` and ``beta`` can be estimated through mean and variance of observed count of erroneous variants (``lambda``). We'll first fit estimated error count to these parameters:
+Now lets fit it with Gamma distribution estimating ``alpha`` and ``beta`` parameters using linear regression of mean and variance of ``lambda`` against ``MBEM error rate * coverage``:
 
 ```{r}
 df.1.m.0 <- ddply(df.1.m, .(count.est, f.mean, f.var),
@@ -113,6 +113,8 @@ ggplot(df.1.m.0, aes(x=count.est, y=f.mean)) + geom_point(aes(size=weight), shap
 l.mean.fit <- lm(f.mean ~ count.est,
                  df.1.m.0, weights=weight)
 
+print(coef(l.mean.fit))
+
 ggplot(df.1.m.0, aes(x=count.est, y=f.var)) + geom_point(aes(size=weight), shape=21) +
   geom_smooth(aes(weight=weight), method=lm, color="black", linetype="dashed") + 
   xlab("Estimated error count") +
@@ -121,9 +123,11 @@ ggplot(df.1.m.0, aes(x=count.est, y=f.var)) + geom_point(aes(size=weight), shape
 
 l.var.fit <- lm(f.var ~ count.est,
                 df.1.m.0, weights=weight)
+
+print(coef(l.var.fit))
 ```
 
-Compute probabilities based on Gamma distribution, compare fitted and observed ``P(lambda|error rate estimate * coverage)``:
+Check fit by comparing probabilities computed using Gamma distribution and ``P(lambda|MBEM error rate * coverage)``:
 
 ```{r, message=FALSE, warning=FALSE, cache=FALSE}
 df.1.m <- ddply(df.1.m, .(count.est),
@@ -157,7 +161,7 @@ Lets now compute P-values for errors using fitted Negative Binomial model and co
 
 ```{r, message=FALSE, warning=FALSE}
 df.1.m$size <- df.1.m$a + df.1.m$count.obs
-df.1.m$prob <- 1/(1+df.1.m$b)
+df.1.m$prob <- 1 / (1 + df.1.m$b)
 
 df.1.m$pval <- with(df.1.m, 
                     1.0 - pbinom(count.obs, 
