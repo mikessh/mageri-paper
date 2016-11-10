@@ -12,31 +12,37 @@ knitr::opts_chunk$set(echo = TRUE)
 Load data from 2 independent experiments with 10 different PCR assays.
 
 ```{r}
+library(plyr)
+library(ggplot2)
+library(RColorBrewer)
+
 df <- data.frame()
 
-for (q in c(20,25,30)){
-for (proj in c(73, 82)) {
-  for (sample in c("encyclo", "kappa-hf-taq", "phusion", "sd-hs", "snp-detect",
-                   "taq-hs", "tersus", "tersus-snp-buff", "truseq", "velox")) {
-    
-    .df <- read.table(
-        paste(
-          paste(q, "-1", paste("polerr", proj, sep=""), sep="_"),
-          paste("polerr", proj, ".", sample, ".variant.caller.txt", sep=""), sep ="/"), 
-                               header=T, sep="\t", stringsAsFactors = F)
-    .df$q <- q
-    .df$proj <- proj
-    .df$sample <- sample
-    df <- rbind(df, .df)
+for (q in c(20, 25, 30)) {
+  for (m in c(8, 16, 32)) {
+    for (proj in c("73", "82")) {
+      for (sample in c("encyclo", "kappa-hf-taq", "phusion", "sd-hs", "snp-detect",
+                       "taq-hs", "tersus", "tersus-snp-buff", "truseq", "velox")) {
+        .df <- read.table(
+            paste("data",
+              paste(paste(q, m, paste("polerr", proj, sep=""), sep="_"), sample, "variant.caller.txt", sep = "."), 
+                    sep ="/"),
+            header=T, sep="\t", stringsAsFactors = F)
+        .df$q <- q
+        .df$m <- m
+        .df$proj <- proj
+        .df$sample <- sample
+        df <- rbind(df, .df)
+      }
+    }
   }
 }
-}
 
-df <- subset(df, freq > 0 & freq < 0.001 & 
+df <- subset(df, count > 0 & 
                !grepl("D", mutation) & !grepl("I", mutation) & global.est == 0 & 
                coverage > 0)
 
-df$mut.split <- sapply(df$mutation, function(x) strsplit(as.character(x),"[S:>]"))
+df$mut.split <- sapply(df$mutation, function(x) strsplit(as.character(x), "[S:>]"))
 df$mutation.pos <- as.integer(sapply(df$mut.split, function(x) x[2]))
 df$mutation.from <- sapply(df$mut.split, function(x) x[3])
 df$mutation.to <- sapply(df$mut.split, function(x) x[4])
@@ -46,33 +52,135 @@ df$mut.split  <- NULL
 Model estimates for error rate:
 
 ```{r}
-library(ggplot2)
-library(RColorBrewer)
-rf <- colorRampPalette(rev(brewer.pal(11,'Spectral')))
+rf <- colorRampPalette(rev(brewer.pal(11, 'Spectral')))
 r <- rf(32)
 
 ggplot(df, aes(x=freq, y=error.rate)) + 
   stat_binhex() +
   geom_abline(intercept = 0, slope=1, linetype="dashed") + 
   scale_x_log10("Observed error frequency", limits=c(1e-6, 1e-2), 
-                breaks=c(1e-6,1e-5,1e-4,1e-3,1e-2)) + 
+                breaks=c(1e-6, 1e-5, 1e-4, 1e-3, 1e-2)) + 
   scale_y_log10("Estimated error frequency", limits=c(1e-6, 1e-2), 
-                breaks=c(1e-6,1e-5,1e-4,1e-3,1e-2)) + 
-  facet_wrap(~q) +
+                breaks=c(1e-6, 1e-5, 1e-4, 1e-3, 1e-2)) + 
+  facet_grid(q~m) +
   scale_fill_gradientn("Unique errors", colors=r, trans="log") +
   theme_bw()
 
-for (qq in c(20, 25, 30)) {
-  print(with(subset(df, q == qq), cor(freq, error.rate, method = "spearman")))
+a <- aov(log10(freq) ~ I(log10(error.rate)) + q + m + proj, df)
+summary(a)
+
+for (mm in unique(df$m)) {
+  for (qq in unique(df$q)) {
+    print(paste("m =", mm , "q =", qq, with(subset(df, q == qq & m == mm), cor(freq, error.rate, method = "spearman"))))
+  }
 }
+```
+
+```{r}
+df.1 <- subset(df, q == 25 & m == 8)
+
+fit <- lm(log10(freq) ~ I(log10(error.rate)) - 1, data = df.1)
+summary(fit)
+
+df.1$lm.fit <- fitted.values(fit)
+df.1$res <- residuals(fit)
+
+ggplot(df.1, aes(x=log10(freq), y=lm.fit)) +
+  geom_point(shape=21) +
+  stat_density2d(aes(fill=..level..), geom="polygon") +
+  geom_smooth(method="lm", formula=y ~ x - 1, linetype="dashed", color="black") +
+  scale_fill_gradientn(colors=r) + theme_bw()
+
+# No correlation between residual sd and MBEM error rate
+
+ggplot(df.1, aes(x=lm.fit, y=res^2)) +
+  geom_point(shape=21) +
+  stat_density2d(aes(fill=..level..), geom="polygon") +
+  scale_fill_gradientn(colors=r) + theme_bw()
+
+# Residuals are distributed normally
+
+mdl.res.sd <- sd(df.1$res)
+
+qqnorm(df.1$res)
+qqline(df.1$res, distribution = function(p) qnorm(p, mean = 0, sd = mdl.res.sd),
+       col = 2)
+
+shapiro.test(df.1$res)
+```
+
+Computing error rate statistics:
+
+```{r}
+#
+df.1 <- subset(df, q == 25 & m == 8)
+
+#lambda.m <- 5.2505409 + 0.3545431 * round(df.1$error.rate * df.1$coverage)
+#lambda.var <- 35.089371 + 3.886613 * round(df.1$error.rate * df.1$coverage)
+
+#df.1$alpha <- 1 / (exp(mdl.res.sd^2) - 1)
+#df.1$beta <- df.1$alpha / exp(mdl.res.sd^2/2) / df.1$error.rate / df.1$coverage
+
+#df.1$phi <- df.1$minor.count.local * df.1$read.fraction.in.minors
+#n <- 20
+#lambda <- 0.8
+#df.1$alpha <- df.1$phi * (1 + lambda^2) / (1 + lambda)^2 / (df.1$phi / n / lambda + 1)
+#df.1$beta <- (1 + lambda^2) / (1 + lambda)^2 / (df.1$phi / n / lambda + 1)
+
+er.m <- df.1$error.rate * exp(mdl.res.sd^2 / 2)
+er.v <- df.1$error.rate ^ 2 * exp(mdl.res.sd^2) * (exp(mdl.res.sd^2) - 1)
+
+df.1$alpha <- er.m * (er.m * (1 - er.m) / er.v - 1)
+df.1$beta <- (1 - er.m) * (er.m * (1 - er.m) / er.v - 1)
+```
+
+
+```{r}
+# source("https://bioconductor.org/biocLite.R")
+# biocLite("Biobase")
+# install.packages("TailRank", repos="http://R-Forge.R-project.org")
+library(TailRank)
+                 
+
+df.1$pval <- with(df.1, mapply(function(x, y, a, b, z)
+                ifelse(x <= 5, 1.0 - pbb(x, N = y, u = a, v = b) + 0.5 * dbb(x, N = y, u = a, v = b),
+                       1.0 - pnorm(log10(x / y), mean = log10(z), sd = mdl.res.sd)),
+                count, coverage, alpha, beta, error.rate))
+#df.1$pval <- with(df.1, 
+#                1.0 - pnbinom(count, prob = beta / (1 + beta), size = alpha) +
+#                0.5 * dnbinom(count, prob = beta / (1 + beta), size = alpha))
+
+#df.1$pval <- with(df.1, 
+#                1.0 - pbinom(count, prob = error.rate, size = coverage) +
+#                  0.5 * dbinom(count, prob = error.rate, size = coverage))
+
+df.count.summary <- ddply(df.1, .(count), summarize, weight = length(count))
+
+df.1$pval.true <- with(df.count.summary, 
+                     sapply(df.1$count, 
+                       function(x) 
+                         sum(ifelse(x > count, 0, ifelse(x == count, 0.5 * weight, weight)))) / sum(weight))
+
+sx <- sort(-10*log10(df.1$pval))
+sy <- sort(-10*log10(df.1$pval.true))
+lenx <- length(sx)
+leny <- length(sy)
+if (leny < lenx)sx <- approx(1L:lenx, sx, n = leny)$y
+if (leny > lenx)sy <- approx(1L:leny, sy, n = lenx)$y
+
+ggplot(data.frame(q=sx, q_true=sy), aes(x=q, y=q_true, color=sx-sy)) + 
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1, color = "black", linetype="dashed") +
+  scale_x_continuous("Computed Q score", limits=c(0, 40)) + 
+  scale_y_continuous("True Q score", limits=c(0, 40)) +
+  scale_color_gradient2(low = "#4575b4", mid="grey", high="#d73027", midpoint=0, limits=c(-3,3)) +
+  theme_bw()
 ```
 
 We'll go Bayesian way to compute P-values (and Q-scores) of erroneous variants accounting for the indirect minor-based error model (MBEM) we apply to infer the error rate at a given position. We'll assume that observed erroneous variant counts are distributed according to Poisson distribution with ``lambda`` parameter that is estimated as ``MBEM error rate * coverage``, modelling the uncertainity in ``lambda`` using Gamma distribution. Thus, we'll arrive to a Negative Binomial distribution for our final P-values estimates. First lets plot the conditional probability ``P(lambda|MBEM error rate * coverage)``: 
 
 ```{r}
-library(plyr)
-
-df.1 <- subset(df, q == 20)
+df.1 <- subset(df, q == 25 & m == 8)
 
 df.1$count.est <- round(df.1$coverage * df.1$error.rate)
 df.1$count.obs <- round(df.1$coverage * df.1$freq)
@@ -160,27 +268,23 @@ ggplot(df.1.m.1, aes(x=count.est, group = interaction(variable,count.est), fill=
 Lets now compute P-values for errors using fitted Negative Binomial model and compare them to real P-values of error counts:
 
 ```{r, message=FALSE, warning=FALSE}
-df.1.m$size <- df.1.m$a + df.1.m$count.obs
-df.1.m$prob <- 1 / (1 + df.1.m$b)
+df.1.m$size <- df.1.m$a
+df.1.m$prob <- df.1.m$b / (1 + df.1.m$b)
 
 df.1.m$pval <- with(df.1.m, 
-                    1.0 - pbinom(count.obs, 
-                                 prob = prob, 
-                                 size = round(size)) + 
-                      0.5 * dbinom(count.obs, prob = prob, size = round(size)))
+                    1.0 - pnbinom(count.obs, prob = prob, size = size) + 
+                      0.5 * dnbinom(count.obs, prob = prob, size = size))
 
-df.1.m$pval.true <- sapply(df.1.m$count.obs, 
-                           function(x) sum(ifelse(x > df.1.m$count.obs, 0,
-                                                  ifelse(x == df.1.m$count.obs, 
-                                                         0.5 * df.1.m$weight, 
-                                                         df.1.m$weight)
-                                                  ))) / sum(df.1.m$weight)
+df.1.m$pval.true <- with(df.1.m, sapply(count.obs, 
+                           function(x) sum(ifelse(x > count.obs, 0, ifelse(x == count.obs, 0.5 * weight, weight))))
+                         / sum(weight))
 
 ggplot(df.1.m, aes(x=-10*log10(pval), y=-10*log10(pval.true))) + 
+  geom_point(shape = 21) + 
   stat_density2d(aes(fill=..level.., weight=weight), geom="polygon") +
   geom_abline(intercept = 0, slope = 1, color = "black", linetype="dashed") +
-  scale_x_continuous("Computed Q score", limits=c(0,20)) + 
-  scale_y_continuous("True Q score", limits=c(0,20)) +
+  scale_x_continuous("Computed Q score", limits=c(0,40)) + 
+  scale_y_continuous("True Q score", limits=c(0,40)) +
   scale_fill_gradientn(colors=r) +
   theme_bw()
 ```
