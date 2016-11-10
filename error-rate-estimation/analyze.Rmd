@@ -104,9 +104,11 @@ ggplot(df.1, aes(x=log10(freq), y=lm.fit)) +
 # No correlation between residual sd and MBEM error rate
 
 ggplot(df.1, aes(x=lm.fit, y=res^2)) +
-  geom_point(shape=21) +
+  geom_point(shape=21, aes(color=count <= 5)) +
   stat_density2d(aes(fill=..level..), geom="polygon") +
-  scale_fill_gradientn(colors=r) + theme_bw()
+  scale_fill_gradientn(colors=r) + 
+  scale_color_manual(values = c("black", "red")) +
+  theme_bw()
 
 # Residuals are distributed normally
 
