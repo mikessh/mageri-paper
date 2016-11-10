@@ -9,7 +9,7 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Load data from 2 independent experiments with 10 different PCR assays.
+Load data from 2 independent experiments with 10 different PCR assays. Data was ran with different quality and UMI size threshold:
 
 ```{r}
 library(plyr)
@@ -25,7 +25,8 @@ for (q in c(20, 25, 30)) {
                        "taq-hs", "tersus", "tersus-snp-buff", "truseq", "velox")) {
         .df <- read.table(
             paste("data",
-              paste(paste(q, m, paste("polerr", proj, sep=""), sep="_"), sample, "variant.caller.txt", sep = "."), 
+              paste(paste(q, m, paste("polerr", proj, sep=""), sep="_"), sample,
+                    "variant.caller.txt", sep = "."), 
                     sep ="/"),
             header=T, sep="\t", stringsAsFactors = F)
         .df$q <- q
@@ -49,7 +50,9 @@ df$mutation.to <- sapply(df$mut.split, function(x) x[4])
 df$mut.split  <- NULL
 ```
 
-Model estimates for error rate:
+Minor-based error model fitting for observed PCR error rate:
+
+> Note that 0-order model is used here. Same polymerase was used during linear PCR to attach UMI and at subsequent PCR cycles. Thus per cycle error rate computed from errors within MIGs should nicely reflect observed error rate.
 
 ```{r}
 rf <- colorRampPalette(rev(brewer.pal(11, 'Spectral')))
@@ -71,10 +74,17 @@ summary(a)
 
 for (mm in unique(df$m)) {
   for (qq in unique(df$q)) {
-    print(paste("m =", mm , "q =", qq, with(subset(df, q == qq & m == mm), cor(freq, error.rate, method = "spearman"))))
+    print(paste("m =", mm , "q =", qq, with(subset(df, q == qq & m == mm), 
+                                            cor(freq, error.rate, method = "spearman"))))
   }
 }
 ```
+
+Detailed fitting of observed error rate under log transformation.
+
+> We get a good fit for log frequencies with slope ~ 1.
+
+> Residuals are not correlated with error rate and are normally distributed
 
 ```{r}
 df.1 <- subset(df, q == 25 & m == 8)
@@ -109,57 +119,50 @@ qqline(df.1$res, distribution = function(p) qnorm(p, mean = 0, sd = mdl.res.sd),
 shapiro.test(df.1$res)
 ```
 
-Computing error rate statistics:
+Computing Q-scores for errors using a composite Log Normal + Beta Binomial model and comparing them with real Q-scores.
 
-```{r}
-#
-df.1 <- subset(df, q == 25 & m == 8)
+> Beta Binomial model parameters are estimated using mean and sd of fitting performed in previous section
 
-#lambda.m <- 5.2505409 + 0.3545431 * round(df.1$error.rate * df.1$coverage)
-#lambda.var <- 35.089371 + 3.886613 * round(df.1$error.rate * df.1$coverage)
+> Beta Binomial P-value is computed for variant **counts** in they are <= 5, Log Normal model for **frequencies** is computed otherwise
 
-#df.1$alpha <- 1 / (exp(mdl.res.sd^2) - 1)
-#df.1$beta <- df.1$alpha / exp(mdl.res.sd^2/2) / df.1$error.rate / df.1$coverage
+> Q score distributions are compared using QQ plot
 
-#df.1$phi <- df.1$minor.count.local * df.1$read.fraction.in.minors
-#n <- 20
-#lambda <- 0.8
-#df.1$alpha <- df.1$phi * (1 + lambda^2) / (1 + lambda)^2 / (df.1$phi / n / lambda + 1)
-#df.1$beta <- (1 + lambda^2) / (1 + lambda)^2 / (df.1$phi / n / lambda + 1)
-
-er.m <- df.1$error.rate * exp(mdl.res.sd^2 / 2)
-er.v <- df.1$error.rate ^ 2 * exp(mdl.res.sd^2) * (exp(mdl.res.sd^2) - 1)
-
-df.1$alpha <- er.m * (er.m * (1 - er.m) / er.v - 1)
-df.1$beta <- (1 - er.m) * (er.m * (1 - er.m) / er.v - 1)
-```
-
+> The threshold of 5 chose empirically, decreasing and increasing them will under- and over-estimate Q-scores respectively
 
 ```{r}
 # source("https://bioconductor.org/biocLite.R")
 # biocLite("Biobase")
 # install.packages("TailRank", repos="http://R-Forge.R-project.org")
 library(TailRank)
-                 
+
+# Beta-binomial parameters
+
+er.m <- df.1$error.rate * exp(mdl.res.sd^2 / 2)
+er.v <- df.1$error.rate ^ 2 * exp(mdl.res.sd^2) * (exp(mdl.res.sd^2) - 1)
+
+df.1$alpha <- er.m * (er.m * (1 - er.m) / er.v - 1)
+df.1$beta <- (1 - er.m) * (er.m * (1 - er.m) / er.v - 1)
+
+# Model P-values
 
 df.1$pval <- with(df.1, mapply(function(x, y, a, b, z)
-                ifelse(x <= 5, 1.0 - pbb(x, N = y, u = a, v = b) + 0.5 * dbb(x, N = y, u = a, v = b),
+                ifelse(x <= 5, 1.0 - pbb(x, N = y, u = a, v = b) + 
+                         0.5 * dbb(x, N = y, u = a, v = b),
                        1.0 - pnorm(log10(x / y), mean = log10(z), sd = mdl.res.sd)),
                 count, coverage, alpha, beta, error.rate))
-#df.1$pval <- with(df.1, 
-#                1.0 - pnbinom(count, prob = beta / (1 + beta), size = alpha) +
-#                0.5 * dnbinom(count, prob = beta / (1 + beta), size = alpha))
 
-#df.1$pval <- with(df.1, 
-#                1.0 - pbinom(count, prob = error.rate, size = coverage) +
-#                  0.5 * dbinom(count, prob = error.rate, size = coverage))
+# Real P-values
 
 df.count.summary <- ddply(df.1, .(count), summarize, weight = length(count))
 
 df.1$pval.true <- with(df.count.summary, 
                      sapply(df.1$count, 
                        function(x) 
-                         sum(ifelse(x > count, 0, ifelse(x == count, 0.5 * weight, weight)))) / sum(weight))
+                         sum(ifelse(x > count, 
+                                    0, ifelse(x == count, 0.5 * weight, weight)))) / 
+                       sum(weight))
+
+# For qqplot in ggplot
 
 sx <- sort(-10*log10(df.1$pval))
 sy <- sort(-10*log10(df.1$pval.true))
@@ -173,6 +176,7 @@ ggplot(data.frame(q=sx, q_true=sy), aes(x=q, y=q_true, color=sx-sy)) +
   geom_abline(intercept = 0, slope = 1, color = "black", linetype="dashed") +
   scale_x_continuous("Computed Q score", limits=c(0, 40)) + 
   scale_y_continuous("True Q score", limits=c(0, 40)) +
-  scale_color_gradient2(low = "#4575b4", mid="grey", high="#d73027", midpoint=0, limits=c(-3,3)) +
+  scale_color_gradient2(low = "#4575b4", mid="grey", high="#d73027", midpoint=0, 
+                        limits=c(-3,3)) +
   theme_bw()
 ```
