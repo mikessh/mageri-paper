@@ -1,0 +1,145 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load metadata
+
+```{r}
+df.vmeta <- read.table("hd734_variant_metadata.txt", sep="\t", header=T) # variants observed in HD734 and covered by our primers
+df.smeta <- read.table("sample_metadata.txt", sep="\t", header=T) # metadata for amplicon sequencing samples
+```
+
+VCF parsing function
+
+```{r}
+library(stringr)
+
+read_vcf <- function(file_name) {
+  .vcf <- read.table(file_name, header = F, sep = "\t", stringsAsFactors = F)
+  colnames(.vcf) <- c("chromosome", "position",	"skip1", "from", "to", "qual", "skip2", "info", "skip3", "skip4")
+  .vcf$skip1 <- NULL
+  .vcf$skip2 <- NULL
+  .vcf$skip3 <- NULL
+  .vcf$skip4 <- NULL
+  
+  .infosplit <- str_split_fixed(.vcf$info, regex("[=;]"), Inf)[,c(2, 4, 12)]
+  
+  .vcf$coverage <- as.numeric(.infosplit[,1])
+  .vcf$frequency <- as.numeric(.infosplit[,2])
+  .vcf$error.rate <- as.numeric(.infosplit[,3])
+  .vcf$info <- NULL
+  
+  .vcf <- subset(.vcf, nchar(from) == 1 & nchar(to) == 1)
+  .vcf$qual <- as.integer(.vcf$qual)
+  
+  .vcf
+}
+
+head(read_vcf("p126.h4_2_ballast_m1.vcf"))
+```
+
+Read samples with HD734 standard DNA and control human DNA, append metadata
+
+```{r}
+df <- data.frame()
+
+read_vcf_with_metadata <- function(file_name, primer_set, replica, ratio, type) {
+  .vcf <- read_vcf(file_name)
+  .vcf <- merge(.vcf, df.vmeta, all.x = type != "standard", all.y = F)
+  .vcf$known.frequency <- .vcf$known.frequency * ratio
+  .vcf$known.frequency[is.na(.vcf$known.frequency)] <- 0
+  .vcf$primer_set <- primer_set
+  .vcf$replica <- primer_set
+  .vcf$type <- type
+  subset(.vcf, frequency < 0.4) # remove alleles in control
+}
+
+for (i in 1:nrow(df.smeta)) {
+  df <- with(df.smeta, rbind(df, 
+                             read_vcf_with_metadata(paste(prefix[i], "vcf", sep="."), 
+                                                    primer_set[i],
+                                                    replica[i],
+                                                    ratio[i],
+                                                    type[i])))
+}
+```
+
+Group observed variants into tiers
+
+```{r}
+df$tier <- cut(df$known.frequency, c(-1, 0, 0.009, 0.02, 1))
+levels(df$tier) <- c("error", "0.1%", "1%", "5+%")
+summary(df$tier)
+```
+
+Correct P-values
+
+```{r}
+library(plyr)
+
+df$p <- 10^(-df$qual / 10)
+df$p.adj <- p.adjust(df$p, method="BH")
+df$q.adj <- -10 * log10(df$p.adj + 1e-16)
+```
+
+```{r}
+library(ggplot2)
+
+ggplot(subset(df, tier=="error"), aes(frequency, error.rate)) + 
+  geom_point() + scale_x_log10() + scale_y_log10() +
+  theme_bw()
+```
+
+```{r}
+library(ggbeeswarm)
+
+ggplot(df,aes(tier, q.adj, fill=tier)) + 
+  geom_quasirandom(varwidth = F, shape=21, color="grey10") +
+  scale_fill_brewer("", palette = "Set1", guide=F) +
+  xlab("Variant tier") + ylab("Adjusted Q score") +
+  theme_bw()
+```
+
+```{r}
+library(pROC)
+
+df.1 <- subset(df, tier %in% c("error", "0.1%"))
+df.1$type <- ifelse(df.1$tier == "error", 0, 1)
+rocobj1 <- plot.roc(df.1$type, df.1$q.adj,  percent=T, col="#fc8d62", ci=T)
+rocobj2 <- lines.roc(df.1$type, df.1$frequency, percent=T, col="#8da0cb", ci=T)
+
+sens.ci <- ci.se(rocobj1, specificities=seq(0, 100, 2))
+plot(sens.ci, type="shape", col = alpha("#fc8d62", 0.5))
+sens.ci <- ci.se(rocobj2, specificities=seq(0, 100, 2))
+plot(sens.ci, type="shape", col = alpha("#8da0cb", 0.5))
+
+legend("bottomright", legend=c("Q score", "Frequency"), 
+       col=c("#fc8d62", "#8da0cb"), lwd=2)
+
+rocobj1
+rocobj2
+```
+
+```{r}
+df.1 <- subset(df, tier %in% c("error", "1%"))
+df.1$type <- ifelse(df.1$tier == "error", 0, 1)
+rocobj1 <- plot.roc(df.1$type, df.1$q.adj,  percent=T, col="#fc8d62", ci=T)
+rocobj2 <- lines.roc(df.1$type, df.1$frequency, percent=T, col="#8da0cb", ci=T)
+
+sens.ci <- ci.se(rocobj1, specificities=seq(0, 100, 2))
+plot(sens.ci, type="shape", col = alpha("#fc8d62", 0.5))
+sens.ci <- ci.se(rocobj2, specificities=seq(0, 100, 2))
+plot(sens.ci, type="shape", col = alpha("#8da0cb", 0.5))
+
+legend("bottomright", legend=c("Q score", "Frequency"), 
+       col=c("#fc8d62", "#8da0cb"), lwd=2)
+
+rocobj1
+rocobj2
+```
+
