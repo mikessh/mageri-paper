@@ -1,7 +1,7 @@
 ---
 title: "Benchmark of error rate inference from UMI-tagged data and PCR error model"
 author: "Mikhail Shugay"
-date: "November 6, 2016"
+date: "November 29, 2016"
 output: pdf_document
 ---
 
@@ -34,9 +34,12 @@ read_variant_table <- function(file_name, pos_filter = function(x) T, count_filt
   .df <- subset(.df, !grepl("^[DI]", mutation) & coverage > 100 & freq < 0.45)
   
   .df$mutation.fromto <- unlist(lapply(str_split(.df$mutation, ":"), function(x) x[2]))
-  .df$mutation.pos <- as.integer(unlist(lapply(str_split(.df$mutation, ":"), function(x) str_sub(x[1], 2, nchar(x[1])))))
+  .df$mutation.pos <- as.integer(unlist(lapply(str_split(.df$mutation, ":"), 
+                                               function(x) str_sub(x[1], 2, nchar(x[1])))))
   .df <- merge(.df, mtypes)
-  .df %>% filter(pos_filter(mutation.pos) & count_filter(count)) %>% select(mutation.pos, mutation.type, count, coverage)
+  .df %>% 
+    filter(pos_filter(mutation.pos) & count_filter(count)) %>% 
+    select(mutation.pos, mutation.type, count, coverage)
 }
 ```
 
@@ -45,10 +48,16 @@ Load polymerase data. At this stage a single event is a combination of substitut
 ```{r}
 df <- data.frame()
 
+samples <- c("encyclo", "kappa-hf-taq", "phusion", "sd-hs", "snp-detect",
+                   "taq-hs", "tersus", "tersus-snp-buff", "truseq", "velox")
+
 for (proj in c("73", "82")) {
-  for (sample in c("encyclo", "kappa-hf-taq", "phusion", "sd-hs", "snp-detect",
-                   "taq-hs", "tersus", "tersus-snp-buff", "truseq", "velox")) {
-    file_name <- paste("data/25_8_polerr", proj, ".", sample, ".variant.caller.txt", sep = "")
+  for (sample in samples) {
+    file_name <- paste("data/25_8_polerr", proj, ".", sample, 
+                       ".variant.caller.txt", sep = "")
+    
+    # ignore positions with no errors
+    # this includes primers/barcodes
     .df <- read_variant_table(file_name, 
                               count_filter=function(x) x>0)
     .df$proj <- proj
@@ -71,55 +80,51 @@ df.1 <- df %>%
   select(mutation.type, freq)
 
 ggplot(df.1, aes(x=freq)) + geom_histogram(fill="grey", bins=20) + 
-  facet_wrap(~mutation.type, scales="free_y") + theme_bw()
+  facet_wrap(~mutation.type, scales="free_y") + 
+  theme_bw()
 ```
 
-Fit frequency distributions with a Gamma model. We are fitting frequencies as otherwise we'll run in the need to simultaneously handle the coverage parameter.
+Fit frequency distributions with a Beta model.
 
 ```{r}
-gammanll <- function(pars, data){
+betanll <- function(pars, data){
   alpha <- pars[[1]]
   beta <- pars[[2]]
-  return (-sum(dgamma(data, shape = alpha, rate = beta, log = T)))
+  return (-sum(dbeta(data, shape1 = alpha, shape2 = beta, log = T)))
 }
 
 param_guess = function(data) {
   m = mean(data)
   v = sd(data) ^ 2
-  c(m * m / v, m / v)
+  c(m, (1 - m)) * (m * (1 - m) / v - 1)
 }
 
-fit_gamma <- function(data) {
-  list(nloptr(x0 = param_guess(data), eval_f = gammanll, lb = c(0,0), data = data,
-         opts = list(algorithm = "NLOPT_LN_SBPLX", maxeval = 1e5))$solution)
+fit_beta <- function(data) {
+  list(nloptr(x0 = param_guess(data), eval_f = betanll, 
+              lb = c(0,0), data = data,
+              opts = list(algorithm = "NLOPT_LN_SBPLX", 
+                          maxeval = 1e5))$solution)
 }
 
 fit.params <- df.1 %>% 
   group_by(mutation.type) %>%
-  summarize(fit = fit_gamma(freq))
-
-# theta parametrization more intuitive
+  summarize(fit = fit_beta(freq))
 
 fit.params$alpha <- unlist(lapply(fit.params$fit, function(x) x[1]))
-fit.params$theta <- unlist(lapply(fit.params$fit, function(x) 1/ x[2]))
+fit.params$beta <- unlist(lapply(fit.params$fit, function(x) x[2]))
 fit.params$fit <- NULL
 ```
 
-Gamma distribution parameter estimates:
-
-```{r}
-print(fit.params)
-```
-
-Checking goodness of fit. Note that the missing values near 0 can be attributed to sampling effect under finite coverage.
+Checking goodness of fit. Note that poor fit in the vicinity of $0$ can be attributed to sampling effect under finite coverage.
 
 ```{r}
 df.1.fit <- expand.grid(mutation.type = unique(df.1$mutation.type),
-                        freq = seq(min(df.1$freq), max(df.1$freq), length.out = 1000))
+                        freq = seq(min(df.1$freq), max(df.1$freq), 
+                                   length.out = 1000))
 
 df.1.fit <- merge(df.1.fit, fit.params)
 
-df.1.fit$density <- with(df.1.fit, dgamma(freq, shape = alpha, scale = theta))
+df.1.fit$density <- with(df.1.fit, dbeta(freq, shape1 = alpha, shape2 = beta))
 
 
 ggplot(data=df.1, aes(x=freq)) +
@@ -129,22 +134,22 @@ ggplot(data=df.1, aes(x=freq)) +
   theme_bw()
 ```
 
-The frequency of errors $f$ for each subsitution type group $T$ is fitted with $Gamma$ distribution:
+The probability of error $p_{T}$ for each subsitution type group $T$ is fitted with a $Beta$ distribution
 
 $$
-f \sim Gamma(\alpha, \theta | T) 
+p_{T} \sim Beta(\alpha_{T}, \beta_{T}) 
 $$
 
-Thus the expected number of mutations $\lambda$ at a coverage $N$ is distributed as
+with parameters
+
+```{r}
+print(fit.params)
+```
+
+Thus the count of an error of a certain type $n_{T}$ at the coverage $N$ is distributed as
 
 $$
-\lambda = Nf \sim Gamma(\alpha, \theta N | T)
-$$
-
-And the final model 
-
-$$
-n \sim NegBinom(\alpha, \frac{\theta N}{1 + \theta N} | T)
+n_{T} \sim BetaBinom(N, \alpha_{T}, \beta_{T})
 $$
 
 ## Benchmark using control sample
@@ -155,40 +160,44 @@ Load control data from amplicon sequencing of control donor DNA
 df.control <- data.frame()
 for (r in 1:2) {
   for (m in 1:4) {
-    file_name <- paste("data/p127.ballast", r, "_m", m, ".variant.caller.txt", sep = "")
+    file_name <- paste("data/p127.ballast", r, "_m", m, ".variant.caller.txt",
+                       sep = "")
     df.control <- rbind(df.control, read_variant_table(file_name))
   }
 }
 ```
 
-Observed and fitted histogram of error frequencies
+Observed (black) and fitted (red) distribution of error ocurrences by error count
 
 ```{r}
+library(TailRank)
+
 alpha <- fit.params$alpha
 names(alpha) <- fit.params$mutation.type
-theta <- fit.params$theta
-names(theta) <- names(alpha)
+beta <- fit.params$beta
+names(beta) <- names(alpha)
 
-compute_density <- function(count, coverage, mutation.type) {
-  mapply(function(x,y,z) dnbinom(x, size = y, prob = z / (1 + z)),
-        count, alpha[mutation.type], theta[mutation.type] * coverage)
+compute_p <- function(count, coverage, mutation.type) {
+  mapply(function(k, n, a, b) dbb(k, n, a, b),
+        count, coverage, alpha[mutation.type], beta[mutation.type])
 }
 
 df.control.1 <- df.control %>%
-  mutate(fit = compute_density(count, coverage, mutation.type)) %>%
-  group_by(count, mutation.type) %>%
-  summarise(freq = length(count), freq.fit = sum(fit)) %>%
   group_by(mutation.type) %>%
-  mutate(freq.fit = freq.fit / sum(freq.fit) * sum(freq))
+  mutate(total = n()) %>%
+  group_by(count, mutation.type) %>%
+  mutate(coverage.med = as.numeric(median(coverage))) %>%
+  group_by(count, mutation.type, coverage.med, total) %>%
+  summarise(freq = n()) %>% 
+  mutate(freq.fit = total * dbb(count, coverage.med,
+                                alpha[mutation.type], beta[mutation.type])) 
 
 ggplot(df.control.1, aes(x = count)) + 
-  geom_ribbon(aes(ymin=ifelse(freq - 1.96*sqrt(freq) <= 0, 1, freq - 1.96*sqrt(freq)), 
-                  ymax=freq + 1.96*sqrt(freq)), alpha=0.3) +
-  geom_line(aes(y=freq))  +
+  geom_line(aes(y=freq), linetype="dashed")  +
   geom_point(aes(y=freq))  +
   geom_line(aes(y=round(freq.fit)), color="red") +
-  scale_x_continuous(limits=c(0,6), breaks = 0:6) +
-  scale_y_log10(limits=c(1, 15000), breaks=10^(0:4), oob = rescale_none) +
+  scale_x_continuous("Erroneous variant count", limits=c(0,6), breaks = 0:6) +
+  ylab("Occurrences") +
   facet_wrap(~mutation.type) + 
   theme_bw()
 ```
