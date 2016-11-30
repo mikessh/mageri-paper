@@ -26,16 +26,24 @@ read_vcf <- function(file_name) {
   .vcf$skip2 <- NULL
   .vcf$skip3 <- NULL
   .vcf$skip4 <- NULL
-  
-  .infosplit <- str_split_fixed(.vcf$info, regex("[=;]"), Inf)[,c(2, 4, 12)]
+    
+  .infosplit <- str_split_fixed(.vcf$info, regex("[=;]"), Inf)[,c(2, 4, 12, 14)]
   
   .vcf$coverage <- as.numeric(.infosplit[,1])
   .vcf$frequency <- as.numeric(.infosplit[,2])
-  .vcf$error.rate <- as.numeric(.infosplit[,3])
+  .vcf$nb.r <- as.numeric(.infosplit[,3])
+  .vcf$nb.p <- as.numeric(.infosplit[,4])
   .vcf$info <- NULL
   
-  .vcf <- subset(.vcf, nchar(from) == 1 & nchar(to) == 1)
+  #.vcf$qual <- as.numeric(.vcf$qual)
+  .vcf <- subset(.vcf, nchar(from) == 1 &
+                   nchar(to) == 1 & !is.na(qual)) # no indels
+  
+  #p <- 10^(-1 * .vcf$qual / 10)
+  #.vcf$qual <- -10 * log10(p.adjust(p))
   .vcf$qual <- as.integer(.vcf$qual)
+  
+  .vcf$count <- as.integer(.vcf$coverage * .vcf$frequency)
   
   .vcf
 }
@@ -56,7 +64,15 @@ read_vcf_with_metadata <- function(file_name, primer_set, replica, ratio, type) 
   .vcf$primer_set <- primer_set
   .vcf$replica <- primer_set
   .vcf$type <- type
-  subset(.vcf, frequency < 0.4) # remove alleles in control
+  
+  .vcf <- subset(.vcf, frequency < 0.4 & count > 0) # remove alleles in control
+  
+  pval <- with(.vcf, 1 - pbinom(count, coverage, nb.p / (1-nb.p)/ coverage))#pnbinom(count, nb.r, nb.p))
+  #pval <- p.adjust(pval)
+
+  .vcf$qual <- ifelse(pval == 0, 1000, -10 * log10(pval))
+  
+  .vcf
 }
 
 for (i in 1:nrow(df.smeta)) {
@@ -77,31 +93,19 @@ levels(df$tier) <- c("error", "0.1%", "1%", "5+%")
 summary(df$tier)
 ```
 
-Correct P-values
-
-```{r}
-library(plyr)
-
-df$p <- 10^(-df$qual / 10)
-df$p.adj <- p.adjust(df$p, method="BH")
-df$q.adj <- -10 * log10(df$p.adj + 1e-16)
-```
-
-```{r}
-library(ggplot2)
-
-ggplot(subset(df, tier=="error"), aes(frequency, error.rate)) + 
-  geom_point() + scale_x_log10() + scale_y_log10() +
-  theme_bw()
-```
-
 ```{r}
 library(ggbeeswarm)
 
-ggplot(df,aes(tier, q.adj, fill=tier)) + 
-  geom_quasirandom(varwidth = F, shape=21, color="grey10") +
+ggplot(df,aes(tier, qual, fill=tier)) + 
+  geom_quasirandom(varwidth = T, shape=21, color="grey10") +
   scale_fill_brewer("", palette = "Set1", guide=F) +
-  xlab("Variant tier") + ylab("Adjusted Q score") +
+  xlab("Variant tier") + scale_y_log10("Q score") +
+  theme_bw()
+
+ggplot(df,aes(tier, frequency, fill=tier)) + 
+  geom_quasirandom(varwidth = T, shape=21, color="grey10") +
+  scale_fill_brewer("", palette = "Set1", guide=F) +
+  xlab("Variant tier") + scale_y_log10("Freq") +
   theme_bw()
 ```
 
@@ -110,13 +114,13 @@ library(pROC)
 
 df.1 <- subset(df, tier %in% c("error", "0.1%"))
 df.1$type <- ifelse(df.1$tier == "error", 0, 1)
-rocobj1 <- plot.roc(df.1$type, df.1$q.adj,  percent=T, col="#fc8d62", ci=T)
+rocobj1 <- plot.roc(df.1$type, df.1$qual,  percent=T, col="#fc8d62", ci=T)
 rocobj2 <- lines.roc(df.1$type, df.1$frequency, percent=T, col="#8da0cb", ci=T)
 
-sens.ci <- ci.se(rocobj1, specificities=seq(0, 100, 2))
-plot(sens.ci, type="shape", col = alpha("#fc8d62", 0.5))
-sens.ci <- ci.se(rocobj2, specificities=seq(0, 100, 2))
-plot(sens.ci, type="shape", col = alpha("#8da0cb", 0.5))
+#sens.ci <- ci.se(rocobj1, specificities=seq(0, 100, 2))
+#plot(sens.ci, type="shape", col = alpha("#fc8d62", 0.5))
+#sens.ci <- ci.se(rocobj2, specificities=seq(0, 100, 2))
+#plot(sens.ci, type="shape", col = alpha("#8da0cb", 0.5))
 
 legend("bottomright", legend=c("Q score", "Frequency"), 
        col=c("#fc8d62", "#8da0cb"), lwd=2)
@@ -128,7 +132,7 @@ rocobj2
 ```{r}
 df.1 <- subset(df, tier %in% c("error", "1%"))
 df.1$type <- ifelse(df.1$tier == "error", 0, 1)
-rocobj1 <- plot.roc(df.1$type, df.1$q.adj,  percent=T, col="#fc8d62", ci=T)
+rocobj1 <- plot.roc(df.1$type, df.1$qual,  percent=T, col="#fc8d62", ci=T)
 rocobj2 <- lines.roc(df.1$type, df.1$frequency, percent=T, col="#8da0cb", ci=T)
 
 sens.ci <- ci.se(rocobj1, specificities=seq(0, 100, 2))
