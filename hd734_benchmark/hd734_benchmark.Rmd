@@ -1,6 +1,8 @@
 ---
-title: "Untitled"
-output: html_document
+title: "MAGERI benchmark using reference standard DNA library"
+author: "Mikhail Shugay"
+date: "December 1, 2016"
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -18,6 +20,10 @@ VCF parsing function
 
 ```{r}
 library(stringr)
+library(pROC)
+library(ggplot2)
+library(ggbeeswarm)
+library(dplyr)
 
 read_vcf <- function(file_name) {
   .vcf <- read.table(file_name, header = F, sep = "\t", stringsAsFactors = F)
@@ -100,9 +106,24 @@ levels(df$tier) <- c("error", "0.1%", "1%", "5+%")
 summary(df$tier)
 ```
 
-```{r}
-library(ggbeeswarm)
+Quality score and error P-values
 
+```{r}
+df.e <- df %>% 
+  filter(type == "blank") %>%
+  mutate(true.p.value = -10 * log10(1 - (rank(frequency) + 0.5) / n()))
+
+ggplot(df.e, aes(true.p.value, qual)) + 
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+  geom_smooth(color="red") + 
+  scale_x_continuous("-10 log10 P-value", limits = c(0, 40)) +
+  scale_y_continuous("Q score", limits = c(0, 40)) +
+  theme_bw()
+```
+
+Variant quality scores
+
+```{r}
 ggplot(df,aes(tier, qual, fill=tier)) + 
   geom_hline(yintercept = 13.0103, linetype ="dotted") +
   geom_hline(yintercept = 20.0103, linetype ="dashed") +
@@ -110,49 +131,18 @@ ggplot(df,aes(tier, qual, fill=tier)) +
   scale_fill_brewer("", palette = "Set1", guide=F) +
   xlab("Variant tier") + scale_y_log10("Q score") +
   theme_bw()
-
-ggplot(df,aes(tier, frequency, fill=tier)) + 
-  geom_quasirandom(varwidth = T, shape=21, color="grey10") +
-  scale_fill_brewer("", palette = "Set1", guide=F) +
-  xlab("Variant tier") + scale_y_log10("Freq") +
-  theme_bw()
 ```
 
-```{r}
-library(pROC)
+ROC curve for rare variants
 
+```{r}
 df.1 <- subset(df, tier %in% c("error", "0.1%"))
 df.1$type <- ifelse(df.1$tier == "error", 0, 1)
-rocobj1 <- plot.roc(df.1$type, df.1$qual,  percent=T, col="#fc8d62", ci=T)
-rocobj2 <- lines.roc(df.1$type, df.1$frequency, percent=T, col="#8da0cb", ci=T)
+rocobj1 <- plot.roc(df.1$type, df.1$qual,  percent=T, col="black", ci=T)
 
-#sens.ci <- ci.se(rocobj1, specificities=seq(0, 100, 2))
-#plot(sens.ci, type="shape", col = alpha("#fc8d62", 0.5))
-#sens.ci <- ci.se(rocobj2, specificities=seq(0, 100, 2))
-#plot(sens.ci, type="shape", col = alpha("#8da0cb", 0.5))
-
-legend("bottomright", legend=c("Q score", "Frequency"), 
-       col=c("#fc8d62", "#8da0cb"), lwd=2)
+sens.ci <- ci.se(rocobj1, specificities=seq(0, 100, 2))
+plot(sens.ci, type="shape", col = alpha("grey", 0.5))
 
 rocobj1
-rocobj2
-```
-
-```{r}
-df.1 <- subset(df, tier %in% c("error", "1%"))
-df.1$type <- ifelse(df.1$tier == "error", 0, 1)
-rocobj1 <- plot.roc(df.1$type, df.1$qual,  percent=T, col="#fc8d62", ci=T)
-rocobj2 <- lines.roc(df.1$type, df.1$frequency, percent=T, col="#8da0cb", ci=T)
-
-#sens.ci <- ci.se(rocobj1, specificities=seq(0, 100, 2))
-#plot(sens.ci, type="shape", col = alpha("#fc8d62", 0.5))
-#sens.ci <- ci.se(rocobj2, specificities=seq(0, 100, 2))
-#plot(sens.ci, type="shape", col = alpha("#8da0cb", 0.5))
-
-legend("bottomright", legend=c("Q score", "Frequency"), 
-       col=c("#fc8d62", "#8da0cb"), lwd=2)
-
-rocobj1
-rocobj2
 ```
 
