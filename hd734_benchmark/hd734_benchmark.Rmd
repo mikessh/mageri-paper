@@ -26,26 +26,23 @@ read_vcf <- function(file_name) {
   .vcf$skip2 <- NULL
   .vcf$skip3 <- NULL
   .vcf$skip4 <- NULL
-    
-  .infosplit <- str_split_fixed(.vcf$info, regex("[=;]"), Inf)[,c(2, 4, 12, 14)]
   
-  .vcf$coverage <- as.numeric(.infosplit[,1])
-  .vcf$frequency <- as.numeric(.infosplit[,2])
-  .vcf$nb.r <- as.numeric(.infosplit[,3])
-  .vcf$nb.p <- as.numeric(.infosplit[,4])
-  .vcf$info <- NULL
-  
-  #.vcf$qual <- as.numeric(.vcf$qual)
+  .vcf$qual <- as.integer(.vcf$qual)
   .vcf <- subset(.vcf, nchar(from) == 1 &
                    nchar(to) == 1 & !is.na(qual)) # no indels
   
-  #p <- 10^(-1 * .vcf$qual / 10)
-  #.vcf$qual <- -10 * log10(p.adjust(p))
-  .vcf$qual <- as.integer(.vcf$qual)
+  .infosplit <- str_split_fixed(.vcf$info, regex("[=;]"), 14)[,c(2, 4, 12, 14)]
+  
+  .vcf$coverage <- as.numeric(.infosplit[,1])
+  .vcf$frequency <- as.numeric(.infosplit[,2])
+  .vcf$bb.a <- as.numeric(.infosplit[,3])
+  .vcf$bb.b <- as.numeric(.infosplit[,4])
+  .vcf$info <- NULL
   
   .vcf$count <- as.integer(.vcf$coverage * .vcf$frequency)
+  .vcf$qual <- as.integer(.vcf$qual)
   
-  .vcf
+  subset(.vcf, nchar(from) == 1 & nchar(to) == 1 & !is.na(qual))
 }
 
 head(read_vcf("p126.h4_2_ballast_m1.vcf"))
@@ -54,6 +51,13 @@ head(read_vcf("p126.h4_2_ballast_m1.vcf"))
 Read samples with HD734 standard DNA and control human DNA, append metadata
 
 ```{r}
+library(TailRank) # For betabinom. 
+# installing:
+# source("https://bioconductor.org/biocLite.R")
+# biocLite("Biobase")
+# install.packages("TailRank", repos="http://R-Forge.R-project.org")
+
+
 df <- data.frame()
 
 read_vcf_with_metadata <- function(file_name, primer_set, replica, ratio, type) {
@@ -67,11 +71,6 @@ read_vcf_with_metadata <- function(file_name, primer_set, replica, ratio, type) 
   
   .vcf <- subset(.vcf, frequency < 0.4 & count > 0) # remove alleles in control
   
-  pval <- with(.vcf, 1 - pbinom(count, coverage, nb.p / (1-nb.p)/ coverage))#pnbinom(count, nb.r, nb.p))
-  #pval <- p.adjust(pval)
-
-  .vcf$qual <- ifelse(pval == 0, 1000, -10 * log10(pval))
-  
   .vcf
 }
 
@@ -83,6 +82,14 @@ for (i in 1:nrow(df.smeta)) {
                                                     ratio[i],
                                                     type[i])))
 }
+
+# Compute scores
+
+df$qual <- with(df, 
+  mapply(function(x,y,a,b) 1 - pbb(x-1,y,a,b) + 0.5 * dbb(x,y,a,b),
+         count, coverage, bb.a, bb.b)
+  )
+df$qual <- ifelse(df$qual <= 1e-100, 999, -10*log10(df$qual))
 ```
 
 Group observed variants into tiers
@@ -99,7 +106,7 @@ library(ggbeeswarm)
 ggplot(df,aes(tier, qual, fill=tier)) + 
   geom_quasirandom(varwidth = T, shape=21, color="grey10") +
   scale_fill_brewer("", palette = "Set1", guide=F) +
-  xlab("Variant tier") + scale_y_log10("Q score") +
+  xlab("Variant tier") + 
   theme_bw()
 
 ggplot(df,aes(tier, frequency, fill=tier)) + 
