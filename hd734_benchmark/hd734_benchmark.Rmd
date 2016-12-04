@@ -37,7 +37,7 @@ read_vcf <- function(file_name) {
   .vcf <- subset(.vcf, nchar(from) == 1 &
                    nchar(to) == 1 & !is.na(qual)) # no indels
   
-  .infosplit <- str_split_fixed(.vcf$info, regex("[=;]"), 14)[,c(2, 4, 12, 14)]
+  .infosplit <- str_split_fixed(.vcf$info, regex("[=;]"), 15)[,c(2, 4, 12, 14)]
   
   .vcf$coverage <- as.numeric(.infosplit[,1])
   .vcf$frequency <- as.numeric(.infosplit[,2])
@@ -45,10 +45,9 @@ read_vcf <- function(file_name) {
   .vcf$bb.b <- as.numeric(.infosplit[,4])
   .vcf$info <- NULL
   
-  .vcf$count <- as.integer(.vcf$coverage * .vcf$frequency)
-  .vcf$qual <- as.integer(.vcf$qual)
+  .vcf$count <- as.integer(round(.vcf$coverage * .vcf$frequency))
   
-  subset(.vcf, nchar(from) == 1 & nchar(to) == 1 & !is.na(qual))
+  .vcf
 }
 
 head(read_vcf("p126.h4_2_ballast_m1.vcf"))
@@ -107,12 +106,59 @@ levels(df$tier) <- c("error", "0.1%", "1%", "5%")
 summary(df$tier)
 ```
 
+Number of detected variants and sampling
+
+```{r}
+df.v.summary <- df.vmeta
+df.v.summary$known.frequency <- df.v.summary$known.frequency * 0.1 # 1:9 diluted samples
+df.v.summary$ratio <- "1:10"
+df.v.summary.2 <- df.vmeta
+df.v.summary.2$ratio <- "1:1"
+df.v.summary <- rbind(df.v.summary, df.v.summary.2)
+df.v.summary$tier  <- cut(df.v.summary$known.frequency, c(-1, 0, 0.009, 0.02, 1))
+levels(df.v.summary$tier) <- c("error", "0.1%", "1%", "5%")
+
+print(df.v.summary)
+
+df.v.summary <- df.v.summary %>% 
+  group_by(tier) %>%
+  summarise(total = n())
+df.v.summary$total <- 2 * df.v.summary$total # we have 2 independent experiments
+
+df.v.summary <- merge(df.v.summary,
+                      df %>% group_by(tier) %>%
+                        summarise(found = n(), 
+                                  detect.prob.m = mean(1-exp(-frequency * coverage)),
+                                  detect.prob.sd = sd(1-exp(-frequency * coverage))))
+
+df.v.summary$detection.prob.lb <- with(df.v.summary,
+                                       detect.prob.m - 1.96*detect.prob.sd - 5e-3)
+df.v.summary$detection.prob.ub <- with(df.v.summary,
+                                       detect.prob.m + 1.96*detect.prob.sd)
+
+df.v.summary$detection.prob.ub <- ifelse(df.v.summary$detection.prob.ub > 1,
+                                         1, 
+                                         df.v.summary$detection.prob.ub )
+
+library(scales)
+ggplot(df.v.summary, aes(x=tier)) +
+  geom_bar(stat="identity", aes(y=detection.prob.ub), fill = "grey70", width=0.5)+
+  geom_bar(stat="identity", aes(y=detection.prob.lb), fill = "white")+
+  geom_point(aes(y = found/total), size = 5, color="red", shape="+") +
+  geom_text(aes(y = found/total - 0.05, label = paste(found, total, sep="/"))) +
+  scale_y_continuous("Detection rate", labels=percent) + 
+  xlab("Variant tier") +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank())
+```
+
 Quality score and error P-values
 
 ```{r}
 df.e <- df %>% 
   filter(type == "blank") %>%
-  mutate(true.p.value = -10 * log10(1 - (rank(frequency) + 0.5) / n()))
+  mutate(true.p.value = -10 * log10(1 - (rank(frequency) - 0.5) / n()))
 
 ggplot(df.e, aes(true.p.value, qual)) + 
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
