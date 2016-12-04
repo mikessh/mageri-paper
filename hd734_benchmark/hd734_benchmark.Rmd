@@ -91,12 +91,12 @@ for (i in 1:nrow(df.smeta)) {
 
 # Compute scores
 
-df$qual <- with(df, 
-  mapply(function(x,y,a,b) 1 - pbb(x,y,a,b) + 0.5 * dbb(x,y,a,b),
-         count, coverage, bb.a, bb.b)
-  )
+#df$qual <- with(df, 
+#  mapply(function(x,y,a,b) 1 - pbb(x,y,a,b) + 0.5 * dbb(x,y,a,b),
+#         count, coverage, bb.a, bb.b)
+#  )
 
-df$qual <- ifelse(df$qual <= 1e-100, 999, -10*log10(df$qual))
+#df$qual <- ifelse(df$qual <= 1e-100, 999, -10*log10(df$qual))
 ```
 
 Group observed variants into tiers
@@ -144,7 +144,7 @@ ggplot(df,aes(tier, qual, fill=tier)) +
   annotate("text", label = "p < 0.05", x=4.3,y=13.0103+2) +
   annotate("text", label = "p < 0.01", x=4.3,y=20.0103+4) +
   scale_fill_brewer("", palette = "Set1", guide=F) +
-  xlab("Variant tier") + scale_y_log10("Q score") +
+  xlab("Variant tier") + ylab("Q score") +
   theme_bw()
 ```
 
@@ -154,22 +154,32 @@ ROC curve for rare variants
 df.1 <- subset(df, tier %in% c("error", "0.1%"))
 df.1$type <- ifelse(df.1$tier == "error", 0, 1)
 
-rocobj <- roc(type ~ qual, df.1)
-df.roc <- data.frame(spec = seq(0, 1, 0.01))
-sens.ci <- ci.se(rocobj, specificities = df.roc$spec)
+make_roc <- function(rocobj, type) {
+  .df.roc <- data.frame(spec = seq(0, 1, 0.01))
+  sens.ci <- ci.se(rocobj, specificities = .df.roc$spec)
 
-df.roc$sens.lo <- sens.ci[,1]
-df.roc$sens.me <- sens.ci[,2]
-df.roc$sens.hi <- sens.ci[,3]
+  .df.roc$sens.lo <- sens.ci[,1]
+  .df.roc$sens.me <- sens.ci[,2]
+  .df.roc$sens.hi <- sens.ci[,3]
+  .df.roc$type <- type
+  
+  .df.roc 
+}
+
+rocobj <- roc(type ~ qual, df.1, ci=T)
+print(rocobj)
+df.roc <- make_roc(rocobj, "Q score")
+rocobj <- roc(type ~ frequency, df.1, ci=T)
+print(rocobj)
+df.roc <- rbind(df.roc, make_roc(rocobj, "Frequency"))
 
 ggplot(df.roc, aes(x=spec)) +
-  geom_ribbon(aes(ymin=sens.lo, ymax=sens.hi), fill="grey", alpha=0.5) +
+  geom_ribbon(aes(ymin=sens.lo, ymax=sens.hi, group=type), fill="grey", alpha=0.5) +
   geom_abline(slope = 1, intercept = 1, linetype = "dashed") +
-  geom_line(aes(y=sens.me), color="red") +
+  geom_line(aes(y=sens.me, color = type)) +
   scale_x_reverse("Specificity") +
   scale_y_continuous("Sensitivity", limits=c(0,1)) +
+  scale_color_brewer("Threshold", palette = "Set1") +
   theme_bw()
-
-rocobj
 ```
 
