@@ -1,0 +1,5 @@
+#sample_id	fastq1	fastq2
+# aka RSRTV02 and RSRTV03, sequencing data from one protease naive patient plasma sample (targeted to pol gene protease coding domain):
+SRR1763767	SRR1763767_2.fastq	SRR1763767_1.fastq
+# aka RSPRCT1 and RSPRCT3, HIV-1 virus extracted from 8E5, residual error rate control at HIV-1 pol gene protease coding domain:
+SRR1763769	SRR1763769_2.fastq	SRR1763769_1.fastq

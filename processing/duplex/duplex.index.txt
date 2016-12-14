@@ -1,0 +1,2 @@
+#index	fastq1	fastq2
+SRR1799908	SRR1799908_1.fastq	SRR1799908_2.fastq
