@@ -24,7 +24,7 @@ library(pROC)
 library(ggplot2)
 library(ggbeeswarm)
 library(dplyr)
-#chr2 212578380
+
 read_vcf <- function(file_name) {
   .vcf <- read.table(file_name, header = F, sep = "\t", stringsAsFactors = F)
   colnames(.vcf) <- c("chromosome", "position",	"skip1", "from", "to", "qual", "skip2", "info", "skip3", "skip4")
@@ -51,10 +51,12 @@ read_vcf <- function(file_name) {
   
   .vcf$count <- as.integer(round(.vcf$coverage * .vcf$frequency))
   
-  .vcf
+  # the variant below is read boundary/alignment artefact
+  # always inspect your indels manually using SAM files when running amplicon-seq datasets:
+  # - UMIs don't guarantee indel-proof data
+  # - and there is no scoring/filtering of indels in MAGERI
+  subset(.vcf, !(position == 212578380 & chromosome == "chr2"))
 }
-z<-read_vcf("p126.h4_3_m1.vcf")
-head(read_vcf("p126.h4_3_m1.vcf"))
 ```
 
 Read samples with HD734 standard DNA and control human DNA, append metadata
@@ -90,134 +92,22 @@ for (i in 1:nrow(df.smeta)) {
 }
 ```
 
-Group observed variants into tiers
+Some grooming
 
 ```{r}
-df$tier <- cut(df$known.frequency, c(-1, 0, 0.009, 0.02, 1))
-levels(df$tier) <- c("error", "0.1%", "1%", "5%")
-summary(df$tier)
+df$bases.diff <- abs(nchar(df$from) - nchar(df$to))
+df$type <- with(df, ifelse(nchar(from) > nchar(to), "deletion", "insertion"))
+df$text <- ifelse(is.na(df$id), NA, paste(df$id, "@", df$known.frequency*100, "%", sep=""))
 ```
 
-Number of detected variants and sampling
+Indel rate and known EGFR variant
 
 ```{r}
-df.v.summary <- df.vmeta
-df.v.summary$known.frequency <- df.v.summary$known.frequency * 0.1 # 1:9 diluted samples
-df.v.summary$ratio <- "1:10"
-df.v.summary.2 <- df.vmeta
-df.v.summary.2$ratio <- "1:1"
-df.v.summary <- rbind(df.v.summary, df.v.summary.2)
-df.v.summary$tier  <- cut(df.v.summary$known.frequency, c(-1, 0, 0.009, 0.02, 1))
-levels(df.v.summary$tier) <- c("error", "0.1%", "1%", "5%")
-
-print(df.v.summary)
-
-df.v.summary <- df.v.summary %>% 
-  group_by(tier) %>%
-  summarise(total = n())
-df.v.summary$total <- 2 * df.v.summary$total # we have 2 independent experiments
-
-df.v.summary <- merge(df.v.summary,
-                      df %>% group_by(tier) %>%
-                        summarise(found = n(), 
-                                  detect.prob.m = mean(1-exp(-frequency * coverage)),
-                                  detect.prob.sd = sd(1-exp(-frequency * coverage))))
-
-df.v.summary$detection.prob.lb <- with(df.v.summary,
-                                       detect.prob.m - 1.96*detect.prob.sd - 5e-3)
-df.v.summary$detection.prob.ub <- with(df.v.summary,
-                                       detect.prob.m + 1.96*detect.prob.sd)
-
-df.v.summary$detection.prob.ub <- ifelse(df.v.summary$detection.prob.ub > 1,
-                                         1, 
-                                         df.v.summary$detection.prob.ub )
-
-library(scales)
-ggplot(df.v.summary, aes(x=tier)) +
-  geom_bar(stat="identity", aes(y=detection.prob.ub), fill = "grey70", width=0.5)+
-  geom_bar(stat="identity", aes(y=detection.prob.lb), fill = "white")+
-  geom_point(aes(y = found/total), size = 5, color="red", shape="+") +
-  geom_text(aes(y = found/total - 0.05, label = paste(found, total, sep="/"))) +
-  scale_y_continuous("Detection rate", labels=percent) + 
-  xlab("Variant tier") +
-  theme_bw() +
-  theme(panel.grid.major.x = element_blank(),
-        panel.grid.major.y = element_blank())
-```
-
-Quality score and error P-values
-
-```{r}
-df.e <- df %>% 
-  filter(type == "blank") %>%
-  mutate(true.p.value = -10 * log10(1 - (rank(frequency) - 0.5) / n()))
-
-ggplot(df.e, aes(true.p.value, qual)) + 
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
-  geom_smooth(color="red", fill="grey", alpha=0.5) + 
-  scale_x_continuous("-10 log10 P-value", limits = c(0, 40)) +
-  scale_y_continuous("Q score", limits = c(0, 40)) +
-  theme_bw()
-```
-
-Frequency of variants and errors
-
-```{r}
-ggplot(df, aes(x=frequency, color = tier)) +
-  geom_density(aes(fill=tier), alpha=0.7) + 
-  ylab("Density") +
-  scale_x_log10("Frequency") + 
-  scale_color_brewer("Variant tier", palette = "Set1") +
-  scale_fill_brewer("Variant tier", palette = "Set1") +
-  theme_bw()
-```
-
-Variant quality scores
-
-```{r}
-ggplot(df,aes(tier, qual, fill=tier)) + 
-  geom_hline(yintercept = 13.0103, linetype ="dotted") +
-  geom_hline(yintercept = 20.0103, linetype ="dashed") +
-  geom_quasirandom(varwidth = T, shape=21, color="grey10") +
-  annotate("text", label = "p < 0.05", x=4.3,y=13.0103+2) +
-  annotate("text", label = "p < 0.01", x=4.3,y=20.0103+4) +
-  scale_fill_brewer("", palette = "Set1", guide=F) +
-  xlab("Variant tier") + ylab("Q score") +
-  theme_bw()
-```
-
-ROC curve for rare variants
-
-```{r}
-df.1 <- subset(df, tier %in% c("error", "0.1%"))
-df.1$type <- ifelse(df.1$tier == "error", 0, 1)
-
-make_roc <- function(rocobj, type) {
-  .df.roc <- data.frame(spec = seq(0, 1, 0.01))
-  sens.ci <- ci.se(rocobj, specificities = .df.roc$spec)
-
-  .df.roc$sens.lo <- sens.ci[,1]
-  .df.roc$sens.me <- sens.ci[,2]
-  .df.roc$sens.hi <- sens.ci[,3]
-  .df.roc$type <- type
-  
-  .df.roc 
-}
-
-rocobj <- roc(type ~ qual, df.1, ci=T)
-print(rocobj)
-df.roc <- make_roc(rocobj, "Q score")
-rocobj <- roc(type ~ frequency, df.1, ci=T)
-print(rocobj)
-df.roc <- rbind(df.roc, make_roc(rocobj, "Frequency"))
-
-ggplot(df.roc, aes(x=spec)) +
-  geom_ribbon(aes(ymin=sens.lo, ymax=sens.hi, group=type), fill="grey", alpha=0.5) +
-  geom_abline(slope = 1, intercept = 1, linetype = "dashed") +
-  geom_line(aes(y=sens.me, color = type)) +
-  scale_x_reverse("Specificity") +
-  scale_y_continuous("Sensitivity", limits=c(0,1)) +
-  scale_color_brewer("Threshold", palette = "Set1") +
+ggplot(df, aes(x=bases.diff, y=frequency, fill=text)) +
+  geom_point(shape=21,size=3) + 
+  scale_y_log10("Variant frequency") + 
+  xlab("Indel size") +
+  scale_fill_brewer("Variant", palette = "Set1") +
   theme_bw()
 ```
 
