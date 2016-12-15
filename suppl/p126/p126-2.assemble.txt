@@ -1,6 +1,0 @@
-#pipeline_block
-sample.group	sample	migs.total	migs.assembled	reads.total	reads.assembled	reads.short.r1	reads.short.r2	reads.mismatch.r1	reads.mismatch.r2
-h4_ballast_m2	h4_ballast_m2	37542	37517	15588598	15570630	1518	0	7126	10767
-h4_ballast_m3	h4_ballast_m3	46480	46462	12286608	12273575	115	127	5097	8616
-h4_ballast_m4	h4_ballast_m4	33758	33744	21726291	21695638	1522	70	11948	19506
-h4_ballast_m1	h4_ballast_m1	52065	52022	14707634	14620991	566	2	8193	77607

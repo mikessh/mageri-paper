@@ -1,5 +1,0 @@
-#index	fastq1	fastq2
-h4_ballast_m3	P126_2_10_TAGCTT_L002_R1_001.fastq.gz	P126_2_10_TAGCTT_L002_R2_001.fastq.gz
-h4_ballast_m4	P126_2_14_AGTTCC_L002_R1_001.fastq.gz	P126_2_14_AGTTCC_L002_R2_001.fastq.gz
-h4_ballast_m1	P126_2_4_TGACCA_L002_R1_001.fastq.gz	P126_2_4_TGACCA_L002_R2_001.fastq.gz
-h4_ballast_m2	P126_2_7_CAGATC_L002_R1_001.fastq.gz	P126_2_7_CAGATC_L002_R2_001.fastq.gz

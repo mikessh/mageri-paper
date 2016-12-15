@@ -1,9 +1,0 @@
-#index	fastq1	fastq2
-ballast2_m3	P127_10_TAGCTT_L001_R1_001.fastq.gz	P127_10_TAGCTT_L001_R2_001.fastq.gz
-ballast1_m4	P127_13_AGTCAA_L001_R1_001.fastq.gz	P127_13_AGTCAA_L001_R2_001.fastq.gz
-ballast2_m4	P127_14_AGTTCC_L001_R1_001.fastq.gz	P127_14_AGTTCC_L001_R2_001.fastq.gz
-ballast1_m1	P127_3_TTAGGC_L001_R1_001.fastq.gz	P127_3_TTAGGC_L001_R2_001.fastq.gz
-ballast2_m1	P127_4_TGACCA_L001_R1_001.fastq.gz	P127_4_TGACCA_L001_R2_001.fastq.gz
-ballast1_m2	P127_7_CAGATC_L001_R1_001.fastq.gz	P127_7_CAGATC_L001_R2_001.fastq.gz
-ballast2_m2	P127_8_ACTTGA_L001_R1_001.fastq.gz	P127_8_ACTTGA_L001_R2_001.fastq.gz
-ballast1_m3	P127_9_GATCAG_L001_R1_001.fastq.gz	P127_9_GATCAG_L001_R2_001.fastq.gz

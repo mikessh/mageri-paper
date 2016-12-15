@@ -1,0 +1,18 @@
+#pipeline_block
+sample.group	sample	migs.good.alignment	migs.aligned	migs.chimeric	migs.skipped	migs.total
+h4_2_m1	h4_2_m1	20354	20817	0	54	20871
+h4_3_m2	h4_3_m2	17076	17091	4	52	17148
+h4_3_m1	h4_3_m1	19457	19942	0	56	19998
+h4_2_m4	h4_2_m4	12608	12949	328	11	14578
+h4_2_m3	h4_2_m3	17452	17455	1	12	17475
+h4_3_m4	h4_3_m4	11206	11508	294	15	12922
+h4_3_m3	h4_3_m3	13464	13466	0	15	13483
+h4_2_m2	h4_2_m2	18846	18864	6	57	18937
+h4_2_ballast_m4	h4_2_ballast_m4	32434	32830	382	28	34643
+h4_3_ballast_m2	h4_3_ballast_m2	39583	39594	2	64	39658
+h4_2_ballast_m3	h4_2_ballast_m3	48005	48006	0	33	48040
+h4_3_ballast_m1	h4_3_ballast_m1	50431	50863	1	97	50960
+h4_2_ballast_m2	h4_2_ballast_m2	38433	38437	0	58	38495
+h4_3_ballast_m4	h4_3_ballast_m4	27637	27931	276	23	29377
+h4_2_ballast_m1	h4_2_ballast_m1	52777	53178	1	91	53269
+h4_3_ballast_m3	h4_3_ballast_m3	50871	50873	0	38	50911

@@ -1,0 +1,6 @@
+#pipeline_block
+sample.group	sample	migs.total	migs.assembled	reads.total	reads.assembled	reads.short.r1	reads.short.r2	reads.mismatch.r1	reads.mismatch.r2
+c41.21_plasma	c41.21_plasma	15245	15078	36951703	36125239	454	96	494054	687562
+c41.13_plasma	c41.13_plasma	18816	18620	40801206	39751866	45	102	543310	935284
+c41.13_tumor	c41.13_tumor	17958	17940	11401939	11093256	939	11	132552	284133
+c41.21_tumor	c41.21_tumor	13154	13127	15687190	15302344	2588	9	154207	369578

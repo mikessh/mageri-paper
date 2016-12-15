@@ -1,0 +1,6 @@
+#pipeline_block
+sample.group	sample	migs.good.alignment	migs.aligned	migs.chimeric	migs.skipped	migs.total
+c41.21_plasma	c41.21_plasma	15043	15074	26	167	15245
+c41.13_plasma	c41.13_plasma	18491	18618	121	196	18816
+c41.13_tumor	c41.13_tumor	17913	17940	1	18	17958
+c41.21_tumor	c41.21_tumor	13107	13126	8	27	13154

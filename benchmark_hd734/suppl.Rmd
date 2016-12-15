@@ -87,9 +87,13 @@ fig13 <- ggplot(df, aes(cqs)) +
   geom_histogram(fill="red", binwidth=1) +
   ylab("") + scale_x_continuous("Consensus quality score", limits=c(0, 41)) +
   theme_bw()
+
+save(file = "../figures/fig13.Rda", fig13)
+
 fig13
 ```
 
+Expected HTS errors and observed error count
 
 ```{r}
 p_err <- 1-pbinom(3, size = 5, p=1e-2) + 0.5*dbinom(3, size = 5, p=1e-2)
@@ -103,6 +107,40 @@ fig14 <- ggplot(df.1, aes(x=count, fill=type)) +
   ylab("") + scale_x_log10("Error count per 100,000 MIGs") +
   scale_fill_brewer("Error type", palette = "Set1") +
   theme_bw()
+
+save(file = "../figures/fig14.Rda", fig14)
+
 fig14
+```
+
+UMI coverage histogram
+
+```{r}
+df.smeta.2 <- read.table("sample_metadata.txt", sep="\t", header=T)
+
+df.1 <- data.frame()
+
+for (i in 1:nrow(df.smeta.2)) {
+  prefix <- df.smeta.2$prefix[i]
+  .df <- read.table(paste0("proc_stat/", prefix, ".umi.histogram.txt"), header = T)
+  .df$sample <- with(df.smeta.2, paste(type[i], primer_set[i], ratio[i]))
+  .df$replica <- df.smeta.2$replica[i]
+  df.1 <- rbind(df.1, .df)
+}
+```
+
+```{r}
+fig12 <- ggplot(df.1, aes(x=mig.size.bin, y = read.count, color=sample, linetype=as.factor(replica))) +
+  annotate(geom="rect", xmin=0,xmax=5, fill="grey", ymin=-Inf,ymax=Inf) +
+  geom_line() +
+  ylab("Number of reads") +
+  scale_x_log10("MIG size", breaks = 2^(seq(0, 20, by=2)), limits=c(1,100000)) +
+  scale_color_brewer(palette = "Paired", guide=F) + 
+  scale_linetype_discrete(guide=F)+
+  theme_bw()
+
+save(file = "../figures/fig12.Rda", fig12)
+
+fig12
 ```
 

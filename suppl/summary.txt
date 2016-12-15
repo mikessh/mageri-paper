@@ -1,1 +1,0 @@
-processing	replica	type	name	chr	pos	from	to	freq	depth	qual	errrate.est	cqs	known.freq
