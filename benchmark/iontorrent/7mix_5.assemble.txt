@@ -1,3 +1,0 @@
-#pipeline_block
-sample.group	sample	migs.total	migs.assembled	reads.total	reads.assembled	reads.short.r1	reads.short.r2	reads.mismatch.r1	reads.mismatch.r2
-my_sample	my_sample	280500	280500	6352849	6352810	0	0	860	0

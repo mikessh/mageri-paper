@@ -1,3 +1,0 @@
-#pipeline_block
-sample.group	sample	migs.good.alignment	migs.aligned	migs.chimeric	migs.skipped	migs.total
-my_sample	my_sample	235799	235799	0	0	235799
