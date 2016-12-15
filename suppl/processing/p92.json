@@ -1,0 +1,16 @@
+{
+  "project": "p92",
+  "references": "meta/refs.fa",
+  "contigs": "meta/contigs.txt",
+  "bed": "meta/refs.bed",
+  "structure": [
+    {
+      "tabular": {
+        "file": "p92.index.txt",
+        "primer": {
+    	    "file": "meta/primers.txt"
+        }
+      }
+    }
+  ]
+}

@@ -130,11 +130,15 @@ df.1.fit <- merge(df.1.fit, fit.params)
 df.1.fit$density <- with(df.1.fit, dbeta(freq, shape1 = alpha, shape2 = beta))
 
 
-ggplot(data=df.1, aes(x=freq)) +
+fig1 <- ggplot(data=df.1, aes(x=freq)) +
   geom_density(fill="grey", color=NA) + 
   geom_line(data=df.1.fit, aes(y=density), color="red") + 
   facet_wrap(~mutation.type, scales="free_y") + 
   theme_bw()
+
+save(file = "../figures/fig1.Rda", fig1)
+
+fig1
 ```
 
 The probability of error $p_{T}$ for each subsitution type group $T$ is fitted with a $Beta$ distribution
@@ -173,8 +177,6 @@ for (r in 1:2) {
 Observed (black) and fitted (red) distribution of error ocurrences by error count
 
 ```{r}
-library(TailRank)
-
 alpha <- fit.params$alpha
 names(alpha) <- fit.params$mutation.type
 beta <- fit.params$beta
@@ -195,7 +197,7 @@ df.control.1 <- df.control %>%
   mutate(freq.fit = total * dbb(count, coverage.med,
                                 alpha[mutation.type], beta[mutation.type])) 
 
-ggplot(df.control.1, aes(x = count)) + 
+fig2 <- ggplot(df.control.1, aes(x = count)) + 
   geom_line(aes(y=freq), linetype="dashed")  +
   geom_point(aes(y=freq))  +
   geom_line(aes(y=round(freq.fit)), color="red") +
@@ -203,4 +205,8 @@ ggplot(df.control.1, aes(x = count)) +
   ylab("Occurrences") +
   facet_wrap(~mutation.type) + 
   theme_bw()
+
+save(file = "../figures/fig2.Rda", fig2)
+
+fig2
 ```

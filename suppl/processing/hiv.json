@@ -1,0 +1,16 @@
+{
+  "project": "hiv",
+  "references": "meta/hxb2_refs.fa",
+  "contigs": "meta/hxb2.contigs",
+  "bed": "meta/hxb2_refs.bed",
+  "structure": [
+    {
+      "tabular": {
+        "file": "hiv.index.txt",
+        "positional": {
+	    "mask1": "nNNNNNNNNca"
+        }
+      }
+    }
+  ]
+}

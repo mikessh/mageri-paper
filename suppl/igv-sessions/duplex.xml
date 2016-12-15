@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Session genome="hg38" hasGeneTrack="true" hasSequenceTrack="true" locus="chr9:130872111-130872228" version="8">
+    <Resources>
+        <Resource path="../duplex/duplex.SRR1799908.bam"/>
+        <Resource path="../duplex/duplex.SRR1799908.vcf"/>
+    </Resources>
+    <Panel height="265" name="DataPanel" width="1423">
+        <Track SQUISHED_ROW_HEIGHT="4" altColor="0,0,178" autoScale="false" clazz="org.broad.igv.track.FeatureTrack" color="0,0,178" colorMode="GENOTYPE" displayMode="EXPANDED" featureVisibilityWindow="-1" fontSize="10" id="/Users/mikesh/Work/RSMU/Oncomigec/new/duplex/duplex.SRR1799908.vcf" name="duplex.SRR1799908.vcf" renderer="BASIC_FEATURE" sortable="false" visible="true" windowFunction="count"/>
+    </Panel>
+    <Panel height="155755" name="Panel1443399691378" width="1423">
+        <Track altColor="0,0,178" autoScale="true" color="175,175,175" colorScale="ContinuousColorScale;0.0;10488.0;255,255,255;175,175,175" displayMode="EXPANDED" featureVisibilityWindow="-1" fontSize="10" id="/Users/mikesh/Work/RSMU/Oncomigec/new/duplex/duplex.SRR1799908.bam_coverage" name="duplex.SRR1799908.bam Coverage" showReference="false" snpThreshold="1.0E-4" sortable="true" visible="true">
+            <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="7215.0" minimum="0.0" type="LINEAR"/>
+        </Track>
+        <Track altColor="0,0,178" autoScale="false" color="0,0,178" displayMode="EXPANDED" featureVisibilityWindow="-1" fontSize="10" id="/Users/mikesh/Work/RSMU/Oncomigec/new/duplex/duplex.SRR1799908.bam" name="duplex.SRR1799908.bam" showSpliceJunctions="false" sortable="true" visible="true">
+            <RenderOptions colorByTag="" colorOption="READ_STRAND" flagUnmappedPairs="false" groupByTag="" maxInsertSize="1000" minInsertSize="50" shadeBasesOption="NONE" shadeCenters="true" showAllBases="false" sortByTag=""/>
+        </Track>
+    </Panel>
+    <Panel height="77" name="FeaturePanel" width="1423">
+        <Track altColor="0,0,178" autoScale="false" color="0,0,178" displayMode="EXPANDED" featureVisibilityWindow="-1" fontSize="10" id="Reference sequence" name="Reference sequence" sortable="false" visible="true"/>
+        <Track altColor="0,0,178" autoScale="false" clazz="org.broad.igv.track.FeatureTrack" color="0,0,178" colorScale="ContinuousColorScale;0.0;317.0;255,255,255;0,0,178" displayMode="SQUISHED" featureVisibilityWindow="-1" fontSize="10" height="35" id="hg38_genes" name="Gene" renderer="BASIC_FEATURE" sortable="false" visible="true" windowFunction="count">
+            <DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="317.0" minimum="0.0" type="LINEAR"/>
+        </Track>
+    </Panel>
+    <PanelLayout dividerFractions="0.25113464447806355,0.875945537065053"/>
+    <HiddenAttributes>
+        <Attribute name="DATA FILE"/>
+        <Attribute name="DATA TYPE"/>
+        <Attribute name="NAME"/>
+    </HiddenAttributes>
+</Session>
