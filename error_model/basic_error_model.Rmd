@@ -1,8 +1,10 @@
 ---
 title: "A basic error model for UMI-tagged data"
 author: "Mikhail Shugay"
-date: "November 29, 2016"
-output: pdf_document
+date: "March 1, 2017"
+output:
+  pdf_document:
+    fig_caption: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -79,8 +81,11 @@ df.1 <- df %>%
   mutate(q5 = quantile(freq, 0.05), q95 = quantile(freq, 0.95)) %>%
   filter(freq >= q5 & freq <= q95) %>% 
   select(mutation.type, freq)
+```
 
+```{r fig.cap="Error rate distribution for different substitution types."}
 ggplot(df.1, aes(x=freq)) + geom_histogram(fill="grey", bins=20) + 
+  xlab("Error rate, 1/bp") + ylab("") +
   facet_wrap(~mutation.type, scales="free_y") + 
   theme_bw()
 ```
@@ -134,10 +139,13 @@ fig1 <- ggplot(data=df.1, aes(x=freq)) +
   geom_density(fill="grey", color=NA) + 
   geom_line(data=df.1.fit, aes(y=density), color="red") + 
   facet_wrap(~mutation.type, scales="free_y") + 
+  xlab("Error rate, 1/bp") + ylab("") +
   theme_bw()
 
 save(file = "../figures/fig1.Rda", fig1)
+```
 
+```{r fig.cap="Fitting Beta distribution using PCR error frequencies observed in UMI-tagged sequencing experiment of a template with a known sequence. Grey area shows the density of observed error frequencies, red line shows the fitting."}
 fig1
 ```
 
@@ -177,6 +185,10 @@ for (r in 1:2) {
 Observed (black) and fitted (red) distribution of error ocurrences by error count
 
 ```{r}
+dbb <- function(x, N, u, v) {
+  beta(x+u, N-x+v) / beta(u,v) * choose(N,x)
+}
+
 alpha <- fit.params$alpha
 names(alpha) <- fit.params$mutation.type
 beta <- fit.params$beta
@@ -207,6 +219,8 @@ fig2 <- ggplot(df.control.1, aes(x = count)) +
   theme_bw()
 
 save(file = "../figures/fig2.Rda", fig2)
+```
 
+```{r fig.cap="Error counts observed in UMI-tagged sequencing of healthy donor DNA (black line and points) and expected from the fitted Beta-Binomial model (red line)."}
 fig2
 ```

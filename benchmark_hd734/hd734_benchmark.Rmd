@@ -1,8 +1,10 @@
 ---
 title: "MAGERI benchmark using reference standard DNA library"
 author: "Mikhail Shugay"
-date: "December 1, 2016"
-output: pdf_document
+date: "March 1, 2017"
+output:
+  pdf_document:
+    fig_caption: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -138,7 +140,9 @@ fig3 <- ggplot(df.v.summary, aes(x=tier)) +
         panel.grid.major.y = element_blank())
 
 save(file = "../figures/fig3.Rda", fig3)
+```
 
+```{r fig.cap="Number of detected variant for each variant frequency tier across two independent experiments with the reference standard. Shaded areas show the 95% confidence intervals for expected fraction of recovered variants, i.e. binomial proportion confidence intervals built using known variant frequency and template coverage."}
 fig3
 ```
 
@@ -157,8 +161,15 @@ fig4 <- ggplot(df.e, aes(true.p.value, qual)) +
   theme_bw()
 
 save(file = "../figures/fig4.Rda", fig4)
+```
 
+```{r fig.cap="MAGERI Q score and the empirical P-values of erroneous variants detected in control donor DNA."}
 fig4
+```
+
+```{r}
+nrow(df.e)
+cor(df.e$qual, df.e$true.p.value, method="pearson")
 ```
 
 Frequency of variants and errors
@@ -173,8 +184,17 @@ fig5 <- ggplot(df, aes(x=frequency, color = tier)) +
   theme_bw()
 
 save(file = "../figures/fig5.Rda", fig5)
+```
 
+```{r fig.cap="Frequency distribution of known Tru-Q 7 variants coming from each frequency tier and errors in the control donor DNA."}
 fig5
+```
+
+```{r}
+df.known <- subset(df, known.frequency > 0)
+nrow(df.known)
+mean((df.known$frequency - df.known$known.frequency) / df.known$known.frequency)
+cor(df.known$frequency, df.known$known.frequency, method="spearman")
 ```
 
 Variant quality scores
@@ -191,7 +211,9 @@ fig6 <- ggplot(df,aes(tier, qual, fill=tier)) +
   theme_bw()
 
 save(file = "../figures/fig6.Rda", fig6)
+```
 
+```{r fig.cap="Comparison of Q score distribution of erroneous variants and variants of each frequency tier. Dotted and dashed lines show P < 0.05 and P < 0.01 thresholds respectively."}
 fig6
 ```
 
@@ -230,7 +252,9 @@ fig7 <- ggplot(df.roc, aes(x=spec)) +
   theme_bw()
 
 save(file = "../figures/fig7.Rda", fig7)
+```
 
+```{r fig.cap="Receiver operation characteristic (ROC) curve comparing the sensitivity and specificity of MAGERI Q scores (blue line) and frequency-based thresholding (red line) in the task of classification of errors and 0.1% tier variants."}
 fig7
 ```
 
